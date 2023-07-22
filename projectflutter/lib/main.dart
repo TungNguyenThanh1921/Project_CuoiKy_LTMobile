@@ -13,7 +13,7 @@ class ChatApp extends StatefulWidget {
 }
 
 class _ChatAppState extends State<ChatApp> {
-  final WebSocketChannel channel = IOWebSocketChannel.connect('ws://192.168.1.43:9090');
+  final WebSocketChannel channel = IOWebSocketChannel.connect('ws://192.168.1.42:9090');
   final TextEditingController _textController = TextEditingController();
   List<String> messages = []; // Danh sách lưu trữ các tin nhắn
   String clientName = ''; // Tên client
@@ -57,12 +57,12 @@ class _ChatAppState extends State<ChatApp> {
   }
 
   void fetchData() async {
-    final url = Uri.parse('http://192.168.0.107:8080/data');
+    final url = Uri.parse('http://192.168.1.42:8080/data');
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      List<String> chatSamples = List<String>.from(data['chat_samples']);
+      final jsonData = json.decode(response.body);
+      List<String> chatSamples = List<String>.from(jsonData['chat_samples']);
       setState(() {
         this.chatSamples = chatSamples;
         selectedChatSample = this.chatSamples[0];
@@ -93,7 +93,6 @@ class _ChatAppState extends State<ChatApp> {
                 reverse: true, // Hiển thị tin nhắn mới nhất lên đầu danh sách
               ),
             ),
-
 
 
         Container(

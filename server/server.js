@@ -39,7 +39,10 @@ const app = express();
 app.get('/data', async (req, res) => {
   try {
     const chatSamples = ['Xin Chao!', 'Hello', 'Hi Guy!'];
-    res.json({ chat_samples: chatSamples });
+    const jsonData = { chat_samples: chatSamples };
+
+    res.setHeader('Content-Type', 'application/json');
+    res.json(jsonData);
   } catch (error) {
     console.error('Error fetching data:', error);
     res.status(500).json({ error: 'Error fetching data' });
