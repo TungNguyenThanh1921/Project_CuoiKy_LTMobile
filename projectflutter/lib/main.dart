@@ -4,21 +4,76 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-void main() => runApp(ChatApp());
+void main() => runApp(MyApp());
 
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Chat App',
+      home: IPAddressScreen(),
+    );
+  }
+}
+
+class IPAddressScreen extends StatefulWidget {
+  @override
+  _IPAddressScreenState createState() => _IPAddressScreenState();
+}
+
+class _IPAddressScreenState extends State<IPAddressScreen> {
+  final TextEditingController _ipAddressController = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Enter IP Address')),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextField(
+              controller: _ipAddressController,
+              decoration: InputDecoration(hintText: 'Enter IPv4 Of Server Address'),
+            ),
+            SizedBox(height: 16.0),
+            ElevatedButton(
+              onPressed: () {
+                String ipAddress = _ipAddressController.text.trim();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ChatApp(ipAddress: ipAddress),
+                  ),
+                );
+              },
+              child: Text('Join'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class ChatApp extends StatefulWidget {
+  final String ipAddress;
+  ChatApp({required this.ipAddress});
   @override
   _ChatAppState createState() => _ChatAppState();
 }
 
 class _ChatAppState extends State<ChatApp> {
-  final WebSocketChannel channel = IOWebSocketChannel.connect('ws://192.168.1.42:9090');
+
+  late final WebSocketChannel channel;
   final TextEditingController _textController = TextEditingController();
   List<String> messages = []; // Danh sách lưu trữ các tin nhắn
   String clientName = ''; // Tên client
   List<String> chatSamples = [];
   String selectedChatSample = '';
+  String ipAddress = '...';
   @override
   void dispose() {
     channel.sink.close();
@@ -28,7 +83,7 @@ class _ChatAppState extends State<ChatApp> {
   @override
   void initState() {
     super.initState();
-
+    channel = IOWebSocketChannel.connect('ws://${widget.ipAddress}:9090');
     channel.stream.listen((dynamic data) {
       if (data is String) {
         setState(() {
@@ -57,7 +112,7 @@ class _ChatAppState extends State<ChatApp> {
   }
 
   void fetchData() async {
-    final url = Uri.parse('http://192.168.1.42:8080/data');
+    final url = Uri.parse('http://${widget.ipAddress}:8080/data');
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
@@ -71,6 +126,7 @@ class _ChatAppState extends State<ChatApp> {
       print('Lỗi khi gọi API: ${response.statusCode}');
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
