@@ -118,6 +118,14 @@ class _ChatAppState extends State<ChatApp> {
     if (response.statusCode == 200) {
       final jsonData = json.decode(response.body);
       List<String> chatSamples = List<String>.from(jsonData['chat_samples']);
+      for(int i=0; i< chatSamples.length;i++){
+        if(chatSamples[i].isEmpty){
+          chatSamples[i] = "";
+        }
+        else if(chatSamples[i] is int){
+          chatSamples[i] = chatSamples[i].toString();
+        }
+      }
       setState(() {
         this.chatSamples = chatSamples;
         selectedChatSample = this.chatSamples[0];
