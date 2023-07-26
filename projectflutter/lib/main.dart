@@ -1,7 +1,10 @@
 import 'dart:convert';
+import 'dart:ffi';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
+import 'package:projectflutter/InitServer.dart';
+import 'package:projectflutter/Login.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 void main() => runApp(MyApp());
@@ -42,10 +45,12 @@ class _IPAddressScreenState extends State<IPAddressScreen> {
             ElevatedButton(
               onPressed: () {
                 String ipAddress = _ipAddressController.text.trim();
+                InitServer(ipAddress);
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => ChatApp(ipAddress: ipAddress),
+                   // builder: (context) => ChatApp(ipAddress: ipAddress),
+                      builder: (context) => Login()
                   ),
                 );
               },
@@ -134,7 +139,30 @@ class _ChatAppState extends State<ChatApp> {
       print('Lỗi khi gọi API: ${response.statusCode}');
     }
   }
+  Future<bool> CheckLogin() async {
+    final url = Uri.parse('http://${widget.ipAddress}:8080/data');
+    final response = await http.get(url);
 
+    if (response.statusCode == 200) {
+      final jsonData = json.decode(response.body);
+      List<String> chatSamples = List<String>.from(jsonData['chat_samples']);
+      for(int i=0; i< chatSamples.length;i++){
+        if(chatSamples[i].isEmpty){
+          chatSamples[i] = "";
+        }
+        else if(chatSamples[i] is int){
+          chatSamples[i] = chatSamples[i].toString();
+        }
+      }
+      setState(() {
+        this.chatSamples = chatSamples;
+        selectedChatSample = this.chatSamples[0];
+      });
+    } else {
+      print('Lỗi khi gọi API: ${response.statusCode}');
+    }
+    return true;
+  }
 
   @override
   Widget build(BuildContext context) {
