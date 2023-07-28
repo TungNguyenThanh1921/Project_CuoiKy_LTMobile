@@ -31,3 +31,26 @@ CREATE TABLE Message  (
     FOREIGN KEY (conversation_id) REFERENCES Conversation(conversation_id),
     FOREIGN KEY (sender_user_id) REFERENCES Users(user_id)
 );
+INSERT INTO Users (username, email, password, avatar, created_at)
+VALUES
+    (N'Đạt', 'DAT.doe@email.com', 'abc123', NULL, '2023-07-28 10:00:00'),
+    ('Trang', 'Trang123@email.com', 'abc456', NULL, '2023-07-28 11:30:00'),
+    (N'Tài', 'TTTai@email.com', 'abc789', NULL, '2023-07-28 12:15:00');
+
+	INSERT INTO Conversation (conversation_name, user_id, created_at, IsPrivate)
+VALUES
+    ('General Chat', 1, '2023-07-28 10:00:00', 0),
+    ('Private Chat 1', 2, '2023-07-28 11:30:00', 1),
+    ('Public Chat 1', 3, '2023-07-28 12:15:00', 0);
+
+	INSERT INTO Message (conversation_id, sender_user_id, content, img, sent_at)
+VALUES
+    (1, 1, 'Hello, everyone!', NULL, '2023-07-28 10:05:00'),
+    (1, 2, 'hehehe!', NULL, '2023-07-28 10:10:00'),
+    (2, 2, 'private message.', NULL, '2023-07-28 11:35:00'),
+    (2, 1, 'xin chao', NULL, '2023-07-28 11:40:00'),
+    (3, 3, 'Hello, world!', NULL, '2023-07-28 12:20:00');
+
+select * from Message
+select * from Users
+select * from Conversation
