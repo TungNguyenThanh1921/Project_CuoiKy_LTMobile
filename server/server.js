@@ -50,13 +50,46 @@ app.use((req, res, next) => {
 app.get('/data', async (req, res) => {
   try {
     // Thực hiện các truy vấn lấy dữ liệu từ cơ sở dữ liệu
-    const result = await queryDB('SELECT * FROM PRODUCT');
-    const chatSamples = result.map((row) => row.ProductName);
+    const result = await queryDB('SELECT * FROM Users');
+	console.log(result);
+    const chatSamples = result.map((row) => row.username);
     res.json({ chat_samples: chatSamples });
   } catch (error) {
     console.error('Error fetching data:', error);
     res.status(500).json({ error: 'Error fetching data' });
     console.log('loi gui api');
+  }
+});
+
+app.get('/GetData', async (req, res) => {
+  try {
+    // Trích xuất câu lệnh SQL từ tham số 'sql' trong URL
+    const sqlStatement = req.query.sql;
+
+    // Thực thi câu lệnh SQL để lấy dữ liệu từ cơ sở dữ liệu
+    const result = await queryDB(sqlStatement);
+
+    // Gửi dữ liệu trả về cho client dưới dạng JSON
+    res.json(result);
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    res.status(500).json({ error: 'Error fetching data' });
+  }
+});
+
+app.get('/CheckLogin', async (req, res) => {
+  try {
+    // Trích xuất câu lệnh SQL từ tham số 'sql' trong URL
+    const sqlStatement = req.query.sql;
+
+    // Thực thi câu lệnh SQL để lấy dữ liệu từ cơ sở dữ liệu
+    const result = await queryDB(sqlStatement);
+
+    // Gửi dữ liệu trả về cho client dưới dạng JSON
+    res.json(result);
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    res.status(500).json({ error: 'Error fetching data' });
   }
 });
 
@@ -70,6 +103,7 @@ app.get('/products', async (req, res) => {
     res.status(500).json({ error: 'Error fetching data' });
   }
 });
+
 
 app.get('/getIP', (req, res) => {
   const ipAddress = req.ip;

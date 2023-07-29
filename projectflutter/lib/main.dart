@@ -3,7 +3,7 @@ import 'dart:ffi';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
-import 'package:projectflutter/InitServer.dart';
+import 'package:projectflutter/ServerManager.dart';
 import 'package:projectflutter/Login.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -45,7 +45,7 @@ class _IPAddressScreenState extends State<IPAddressScreen> {
             ElevatedButton(
               onPressed: () {
                 String ipAddress = _ipAddressController.text.trim();
-                InitServer(ipAddress);
+                ServerManager().connect(ipAddress);
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -64,8 +64,7 @@ class _IPAddressScreenState extends State<IPAddressScreen> {
 }
 
 class ChatApp extends StatefulWidget {
-  final String ipAddress;
-  ChatApp({required this.ipAddress});
+
   @override
   _ChatAppState createState() => _ChatAppState();
 }
@@ -88,8 +87,8 @@ class _ChatAppState extends State<ChatApp> {
   @override
   void initState() {
     super.initState();
-    channel = IOWebSocketChannel.connect('ws://${widget.ipAddress}:9090');
-    channel.stream.listen((dynamic data) {
+    //channel = IOWebSocketChannel.connect('ws://${widget.ipAddress}:9090');
+    ServerManager().channel?.stream.listen((dynamic data) {
       if (data is String) {
         setState(() {
           messages.add(data);
@@ -103,13 +102,13 @@ class _ChatAppState extends State<ChatApp> {
         print('Received unexpected data type: ${data.runtimeType}');
       }
     });
-    fetchData();
+    //fetchData();
 
   }
 
   void sendMessage(String message) {
     final formattedMessage = '$clientName: $message'; // Thêm tên client vào tin nhắn
-    channel.sink.add(formattedMessage);
+    ServerManager().channel?.sink.add(formattedMessage);
     // Thêm tin nhắn mới vào danh sách và cập nhật giao diện
     setState(() {
       messages.add(formattedMessage);
@@ -117,7 +116,7 @@ class _ChatAppState extends State<ChatApp> {
   }
 
   void fetchData() async {
-    final url = Uri.parse('http://${widget.ipAddress}:8080/data');
+    final url = Uri.parse('http://${ServerManager().IpAddress}:8080/data');
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
@@ -140,7 +139,7 @@ class _ChatAppState extends State<ChatApp> {
     }
   }
   Future<bool> CheckLogin() async {
-    final url = Uri.parse('http://${widget.ipAddress}:8080/data');
+    final url = Uri.parse('http://${ServerManager().IpAddress}:8080/data');
     final response = await http.get(url);
 
     if (response.statusCode == 200) {

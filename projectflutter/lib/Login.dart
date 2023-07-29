@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-
+import 'package:projectflutter/ServerManager.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:projectflutter/main.dart';
 void main() {
   runApp(Login());
 }
@@ -23,7 +26,25 @@ class Login extends StatelessWidget {
 class Frame10 extends StatelessWidget {
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  Future<bool> CheckLogin(String sqlStatement) async {
+    final url = Uri.parse('http://${ServerManager().IpAddress}:8080/GetData?sql=${Uri.encodeQueryComponent(sqlStatement)}');
+    //final Uri url = Uri.parse('$serverAddress');
+    final response = await http.get(url);
 
+    if (response.statusCode == 200) {
+      final jsonData = json.decode(response.body);
+      if(jsonData == null || jsonData.isEmpty)
+      {
+        return false;
+      }
+      else {
+        return true;
+      }
+    } else {
+      print('Lỗi khi gọi API: ${response.statusCode}');
+    }
+    return false;
+  }
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -88,6 +109,19 @@ class Frame10 extends StatelessWidget {
                 children: [
                   TextButton(
                     onPressed: () {
+                      String sql = "select * from Users where username = '${usernameController.text.trim()}' and password = '${passwordController.text.trim()}'";
+                      CheckLogin(sql).then((isLoggedIn) {
+                        if(isLoggedIn == true)
+                        {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              // builder: (context) => ChatApp(ipAddress: ipAddress),
+                                builder: (context) => ChatApp()
+                            ),
+                          );
+                        }
+                      });
                       // Thêm hành động khi người dùng nhấn nút vào đây
                     },
                     style: TextButton.styleFrom(
@@ -111,6 +145,9 @@ class Frame10 extends StatelessWidget {
                   ),
                   TextButton(
                     onPressed: () {
+
+
+
                       // Thêm hành động khi người dùng nhấn nút vào đây
                     },
                     style: TextButton.styleFrom(
