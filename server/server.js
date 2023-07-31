@@ -5,24 +5,30 @@ const wss = new WebSocket.Server({ port: 9090 });
 wss.on('connection', (ws) => {
   console.log('A client connected.');
 
-  // Xử lý tin nhắn mới từ client
   ws.on('message', (message) => {
-    console.log('New message:', message);
+    console.log('New message received:', message);
 
-    // Broadcast tin nhắn mới tới tất cả các client khác
-    wss.clients.forEach((client) => {
-      if (client !== ws && client.readyState === WebSocket.OPEN) {
-        client.send(message);
-        console.log('Đã gửi tin nhắn cho các client khác');
-        
-      }
-    });
+    if (message instanceof Uint8Array) {
+      // Broadcast image data to all other clients
+      wss.clients.forEach((client) => {
+        if (client !== ws && client.readyState === WebSocket.OPEN) {
+          client.send(message);
+        }
+      });
+    } else if (typeof message === 'string') {
+      // Broadcast text message to all other clients
+      wss.clients.forEach((client) => {
+        if (client !== ws && client.readyState === WebSocket.OPEN) {
+          client.send(message);
+        }
+      });
+    } else {
+      console.log('Received unexpected data format.');
+    }
   });
 
-  // Xử lý sự kiện client đóng kết nối
   ws.on('close', () => {
     console.log('A client disconnected.');
-    
   });
 });
 
