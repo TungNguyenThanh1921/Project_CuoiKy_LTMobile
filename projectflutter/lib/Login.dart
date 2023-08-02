@@ -1,8 +1,13 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:projectflutter/ServerManager.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:projectflutter/main.dart';
+
+import 'models/user.dart';
 void main() {
   runApp(Login());
 }
@@ -22,6 +27,28 @@ class Login extends StatelessWidget {
     );
   }
 }
+Future<Uint8List> readImageAsBytes(File imageFile) async {
+  return await imageFile.readAsBytes();
+}
+String encodeImageToVarBinary(Uint8List imageBytes) {
+  return base64Encode(imageBytes);
+}
+
+// Future<void> updateAvatarToDefault(Uint8List text) async {
+//
+//
+//       "UPDATE Users SET avatar = '$text' WHERE user_id = ${ServerManager().user?.id}";
+//   final url = Uri.parse(
+//       'http://${ServerManager().IpAddress}:8080/UpdateData?sql=${Uri.encodeQueryComponent(sqlStatement)}');
+//
+//   final response = await http.get(url);
+//
+//   if (response.statusCode == 200) {
+//     print('Avatar updated to default_image');
+//   } else {
+//     print('Error updating avatar: ${response.statusCode}');
+//   }
+// }
 
 class Frame10 extends StatelessWidget {
   final TextEditingController usernameController = TextEditingController();
@@ -32,12 +59,32 @@ class Frame10 extends StatelessWidget {
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
-      final jsonData = json.decode(response.body);
-      if(jsonData == null || jsonData.isEmpty)
+      final List<dynamic> jsonList = json.decode(response.body);
+      if(jsonList == null || jsonList.isEmpty)
       {
         return false;
       }
       else {
+        List<User> dataList = [];
+        for (var jsonRow in jsonList) {
+
+            User data = User.fromJson(jsonRow);
+            print('User ID: ${data.id}');
+            print('Username: ${data.userName}');
+            print('Email: ${data.email}');
+            print('Password: ${data.password}');
+            print('Image (base64): ${data.image}');
+          dataList.add(data);
+
+
+        }
+
+        ServerManager().InitUser(dataList[0]);
+        // user?.id = dataList[0].id;
+        // ServerManager().user?.userName = dataList[0].userName;
+        // ServerManager().user?.email = dataList[0].email;
+        // ServerManager().user?.password = dataList[0].password;
+        // ServerManager().user?.image = dataList[0].image;
         return true;
       }
     } else {
@@ -109,7 +156,7 @@ class Frame10 extends StatelessWidget {
                 children: [
                   TextButton(
                     onPressed: () {
-                      String sql = "select * from Users where username = '${usernameController.text.trim()}' and password = '${passwordController.text.trim()}'";
+                      String sql = "select user_id, username, email, password, avatar from Users where username = '${usernameController.text.trim()}' and password = '${passwordController.text.trim()}'";
                       CheckLogin(sql).then((isLoggedIn) {
                         if(isLoggedIn == true)
                         {

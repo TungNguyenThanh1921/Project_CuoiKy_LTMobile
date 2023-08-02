@@ -1,10 +1,9 @@
 import 'dart:convert';
-import 'dart:ffi';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:web_socket_channel/io.dart';
+import 'package:projectflutter/screenImageView.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'dart:io';
 import 'package:projectflutter/ServerManager.dart';
@@ -141,15 +140,15 @@ class _ChatAppState extends State<ChatApp> {
 
     if (image != null) {
       final bytes = File(image.path).readAsBytesSync();
-      channel.sink.add(Uint8List.fromList([...utf8.encode('image'), ...bytes]));
+      ServerManager().channel?.sink.add(Uint8List.fromList([...utf8.encode('image'), ...bytes]));
       final formattedMessage = Message(MessageType.image, base64Encode(bytes), senderName: clientName, timestamp: DateTime.now());
       setState(() {
         messages.add(formattedMessage);
       });
     } else {
-      final textMessage = 'text $message';
-      channel.sink.add(utf8.encode(textMessage));
-      final formattedMessage = Message(MessageType.text, message, senderName: clientName, timestamp: DateTime.now());
+      final textMessage = message;
+      ServerManager().channel?.sink.add(utf8.encode(textMessage));
+      final formattedMessage = Message(MessageType.text, textMessage, senderName: clientName, timestamp: DateTime.now());
       setState(() {
         messages.add(formattedMessage);
       });
@@ -255,26 +254,29 @@ class _ChatAppState extends State<ChatApp> {
 
     if (message.type == MessageType.image) {
       final imageBytes = base64Decode(message.content);
-      return Container(
-        alignment: isSent ? Alignment.centerRight : Alignment.centerLeft,
+      return GestureDetector(
+        onTap: () => _onImageTap(context, message.content), // Pass the base64 image to the function
         child: Container(
-          padding: EdgeInsets.all(10),
-          margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          decoration: BoxDecoration(
-            color: bgColor,
-            borderRadius: radius,
-          ),
-          child: Column(
-            crossAxisAlignment: align,
-            children: [
-              Image.memory(imageBytes, height: 150, width: 150),
-              SizedBox(height: 4),
-              Text(
-                _formatTimestamp(message.timestamp),
-                style: TextStyle(fontSize: 12, color: Colors.black),
-                textAlign: TextAlign.end,
-              ),
-            ],
+          alignment: isSent ? Alignment.centerRight : Alignment.centerLeft,
+          child: Container(
+            padding: EdgeInsets.all(10),
+            margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: bgColor,
+              borderRadius: radius,
+            ),
+            child: Column(
+              crossAxisAlignment: align,
+              children: [
+                Image.memory(imageBytes, height: 150, width: 150),
+                SizedBox(height: 4),
+                Text(
+                  _formatTimestamp(message.timestamp),
+                  style: TextStyle(fontSize: 12, color: Colors.black),
+                  textAlign: TextAlign.end,
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -311,6 +313,16 @@ class _ChatAppState extends State<ChatApp> {
     }
   }
 
+  void _onImageTap(BuildContext context, String base64Image) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ImageViewScreen(context, base64Image), // Pass the BuildContext
+      ),
+    );
+  }
+
+
   Widget _buildImageThumbnail() {
     if (_pickedImage != null) {
       return SizedBox(
@@ -341,6 +353,7 @@ class _ChatAppState extends State<ChatApp> {
       return Container();
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
