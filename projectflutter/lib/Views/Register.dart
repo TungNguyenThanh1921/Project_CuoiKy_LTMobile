@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:projectflutter/Views/Login.dart';
 
+import 'package:projectflutter/ServerManager.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:projectflutter/Views/popup.dart';
+import 'package:projectflutter/main.dart';
+
+import 'package:projectflutter/models/user.dart';
 void main() {
   runApp(Register());
 }
@@ -26,6 +33,26 @@ class _RegistrationFormState extends State<RegistrationForm> {
   TextEditingController _emailController = TextEditingController();
   TextEditingController _passwordController = TextEditingController();
 
+  Future<bool> CheckRegister(String sqlStatement) async {
+    final url = Uri.parse('http://${ServerManager().IpAddress}:8080/GetData?sql=${Uri.encodeQueryComponent(sqlStatement)}');
+    //final Uri url = Uri.parse('$serverAddress');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final List<dynamic> jsonList = json.decode(response.body);
+      if(jsonList == null || jsonList.isEmpty)
+      {
+        return false;
+      }
+      else {
+
+        return true;
+      }
+    } else {
+      print('Lỗi khi gọi API: ${response.statusCode}');
+    }
+    return false;
+  }
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -143,21 +170,19 @@ class _RegistrationFormState extends State<RegistrationForm> {
                       String email = _emailController.text.trim();
                       String password = _passwordController.text.trim();
                       // Add your registration logic here
-
-
-                      //  String sql = "select user_id, username, email, password, avatar from Users where username = '${usernameController.text.trim()}' and password = '${passwordController.text.trim()}'";
-                      // CheckLogin(sql).then((isLoggedIn) {
-                      //   if(isLoggedIn == true)
-                      //   {
-                      //     Navigator.push(
-                      //       context,
-                      //       MaterialPageRoute(
-                      //         // builder: (context) => ChatApp(ipAddress: ipAddress),
-                      //           builder: (context) => ChatApp()
-                      //       ),
-                      //     );
-                      //   }
-                      // });
+                      String sql = "select user_id, username, email, password, avatar from Users where username = '${_usernameController.text.trim()}' and password = '${_passwordController.text.trim()}'";
+                      CheckRegister(sql).then((isLoggedIn) {
+                        if(isLoggedIn == true)
+                        {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              // builder: (context) => ChatApp(ipAddress: ipAddress),
+                                builder: (context) => Login()
+                            ),
+                          );
+                        }
+                      });
                       // Thêm hành động khi người dùng nhấn nút vào đây
                     },
                     style: TextButton.styleFrom(
@@ -182,6 +207,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
                   TextButton(
                     onPressed: () {
 
+                    
                       Navigator.push(
                         context,
                         MaterialPageRoute(
