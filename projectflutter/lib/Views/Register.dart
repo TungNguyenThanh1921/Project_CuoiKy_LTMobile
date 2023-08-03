@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:projectflutter/Views/Login.dart';
 
 void main() {
   runApp(Register());
@@ -73,11 +74,11 @@ class _RegistrationFormState extends State<RegistrationForm> {
                               ),
                             ],
                           ),
-                          ],
+                        ],
                       ),
                     ),
 
-                          SizedBox(height: 24),
+                    SizedBox(height: 24),
                     TextFormField(
                       controller: _usernameController,
                       decoration: InputDecoration(
@@ -132,54 +133,81 @@ class _RegistrationFormState extends State<RegistrationForm> {
               ),
               SizedBox(height: 24),
               Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        if (_formKey.currentState?.validate() ?? false) {
-                          // Perform registration logic here
-                          String username = _usernameController.text;
-                          String email = _emailController.text;
-                          String password = _passwordController.text;
-                          // Add your registration logic here
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 16),
+                  TextButton(
+                    onPressed: () {
+
+                      // Perform registration logic here
+                      String username = _usernameController.text.trim();
+                      String email = _emailController.text.trim();
+                      String password = _passwordController.text.trim();
+                      // Add your registration logic here
+
+
+                      //  String sql = "select user_id, username, email, password, avatar from Users where username = '${usernameController.text.trim()}' and password = '${passwordController.text.trim()}'";
+                      // CheckLogin(sql).then((isLoggedIn) {
+                      //   if(isLoggedIn == true)
+                      //   {
+                      //     Navigator.push(
+                      //       context,
+                      //       MaterialPageRoute(
+                      //         // builder: (context) => ChatApp(ipAddress: ipAddress),
+                      //           builder: (context) => ChatApp()
+                      //       ),
+                      //     );
+                      //   }
+                      // });
+                      // Thêm hành động khi người dùng nhấn nút vào đây
+                    },
+                    style: TextButton.styleFrom(
+
+                      primary: Colors.black, // Màu chữ của nút
+                      backgroundColor: Color(0xFF0066A6), // Màu nền của nút
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(screenHeight * 0.03),
+                      ),
+                      minimumSize: Size(screenWidth * 0.35, screenHeight * 0.06), // Kích thước tối thiểu của nút
+                    ),
+                    child: Text(
+                      'Register',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontFamily: 'Public Sans',
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {
+
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          // builder: (context) => ChatApp(ipAddress: ipAddress),
+                            builder: (context) => Login()
+                        ),
+                      );
+
+                      // Thêm hành động khi người dùng nhấn nút vào đây
+                    },
+                    style: TextButton.styleFrom(
+
                       primary: Colors.black, // Màu chữ của nút
                       backgroundColor: Color(0xFF00B0DF), // Màu nền của nút
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(screenHeight * 0.03),
                       ),
                       minimumSize: Size(screenWidth * 0.35, screenHeight * 0.06), // Kích thước tối thiểu của nút
-
                     ),
-
-                      child: Text(
-                        'Register',
-                        style: TextStyle(fontSize: 18),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 16),
-                  Expanded(
-                    child: TextButton(
-                      onPressed: () {
-                        Navigator.pop(context); // Go back to the previous screen
-                      },
-                      style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(vertical: 16),
-                        primary: Colors.white, // Màu chữ của nút
-                        backgroundColor: Color(0xFFFFFF), // Màu nền của nút
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(screenHeight * 0.03),
-                        ),
-                        minimumSize: Size(screenWidth * 0.35, screenHeight * 0.06), // Kích thước tối thiểu của nút
-
-                      ),
-                      child: Text(
-                        'Sign In',
-                        style: TextStyle(fontSize: 16),
+                    child: Text(
+                      'Login',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontFamily: 'Public Sans',
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),

@@ -3,11 +3,11 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:projectflutter/screenImageView.dart';
+import 'package:projectflutter/Views/screenImageView.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'dart:io';
 import 'package:projectflutter/ServerManager.dart';
-import 'package:projectflutter/Login.dart';
+import 'package:projectflutter/Views/Login.dart';
 
 
 void main() => runApp(MyApp());
