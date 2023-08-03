@@ -5,9 +5,7 @@ import 'package:projectflutter/ServerManager.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:projectflutter/Views/popup.dart';
-import 'package:projectflutter/main.dart';
 
-import 'package:projectflutter/models/user.dart';
 void main() {
   runApp(Register());
 }
@@ -35,17 +33,23 @@ class _RegistrationFormState extends State<RegistrationForm> {
 
   Future<bool> CheckRegister(String sqlStatement) async {
     final url = Uri.parse('http://${ServerManager().IpAddress}:8080/GetData?sql=${Uri.encodeQueryComponent(sqlStatement)}');
-    //final Uri url = Uri.parse('$serverAddress');
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
       final List<dynamic> jsonList = json.decode(response.body);
       if(jsonList == null || jsonList.isEmpty)
       {
-        return false;
+
+        String sql_initUser = "INSERT INTO Users (username, email, password, avatar, created_at) VALUES (N'${_usernameController.text}', '${_emailController.text.trim()}', '${_passwordController.text.trim()}', NULL, NULL)";
+        final url_intiUser = Uri.parse('http://${ServerManager().IpAddress}:8080/GetData?sql=${Uri.encodeQueryComponent(sql_initUser)}');
+        final response_initUser = await http.get(url_intiUser);
+        if(response_initUser.statusCode == 200)
+          {
+            return false;
+          }
+
       }
       else {
-
         return true;
       }
     } else {
@@ -170,10 +174,17 @@ class _RegistrationFormState extends State<RegistrationForm> {
                       String email = _emailController.text.trim();
                       String password = _passwordController.text.trim();
                       // Add your registration logic here
+
                       String sql = "select user_id, username, email, password, avatar from Users where username = '${_usernameController.text.trim()}' and password = '${_passwordController.text.trim()}'";
+
                       CheckRegister(sql).then((isLoggedIn) {
                         if(isLoggedIn == true)
                         {
+                          Popup().showAlertDialog(context, 'Tài khoản đã tồn tại');
+                        }
+                        else
+                        {
+                          Popup().showAlertDialog(context, 'Tạo tài khoản thành công');
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -183,6 +194,7 @@ class _RegistrationFormState extends State<RegistrationForm> {
                           );
                         }
                       });
+
                       // Thêm hành động khi người dùng nhấn nút vào đây
                     },
                     style: TextButton.styleFrom(
@@ -206,8 +218,6 @@ class _RegistrationFormState extends State<RegistrationForm> {
                   ),
                   TextButton(
                     onPressed: () {
-
-                    
                       Navigator.push(
                         context,
                         MaterialPageRoute(
