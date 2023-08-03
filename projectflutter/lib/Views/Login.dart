@@ -10,6 +10,7 @@ import 'package:projectflutter/Views/Register.dart';
 import 'package:projectflutter/main.dart';
 
 import 'package:projectflutter/models/user.dart';
+import 'package:projectflutter/presentation/chats_screen/chats_screen.dart';
 void main() {
   runApp(Login());
 }
@@ -137,7 +138,7 @@ class Frame10 extends StatelessWidget {
                             context,
                             MaterialPageRoute(
                               // builder: (context) => ChatApp(ipAddress: ipAddress),
-                                builder: (context) => ChatApp()
+                                builder: (context) => ChatsScreen()
                             ),
                           );
                         }

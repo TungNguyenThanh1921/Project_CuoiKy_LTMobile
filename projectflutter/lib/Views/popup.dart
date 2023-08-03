@@ -1,9 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class Popup
 {
+
   showAlertDialog(BuildContext context, String content) {
     showDialog(
       context: context,

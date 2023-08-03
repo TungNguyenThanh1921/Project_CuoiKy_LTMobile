@@ -198,7 +198,7 @@ class ChatsScreen extends StatelessWidget {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => DetailsPage()),
+                        MaterialPageRoute(builder: (_) => Profile()),
                       );
                     },
                     child: Icon(Icons.details), // Ví dụ, thay thế bằng Icon hoặc widget khác tương tự

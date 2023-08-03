@@ -1,16 +1,37 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gap/gap.dart';
 import 'package:projectflutter/core/app_export.dart';
 import 'package:projectflutter/presentation/details/widgets/action.dart';
 import 'package:projectflutter/presentation/details/widgets/category.dart';
 
-class DetailsPage extends StatelessWidget {
-  const DetailsPage({Key? key}) : super(key: key);
+import '../../ServerManager.dart';
+class Profile extends StatefulWidget {
+  @override
+  _DetailsPage createState() => _DetailsPage();
+}
+
+class _DetailsPage extends State<Profile>{
+
 
   @override
   Widget build(BuildContext context) {
+    Uint8List? userImage = ServerManager().user?.image;
+    //getImageBytesFromAssets('assets/images/default_image.jpg');
+    Uint8List? imagepath = ServerManager().img_default;
+    if(userImage != null )
+    {
+      imagepath = 'data:image/jpeg;base64,${base64Encode(userImage)}' as Uint8List?;
+    }
+    if(imagepath == null)
+      {
+        Container();
+      }
     return Scaffold(
       backgroundColor: ColorConstant.fromHex('#ECE9FF'),
       body: Stack(
@@ -18,8 +39,8 @@ class DetailsPage extends StatelessWidget {
           Stack(
             alignment: Alignment.topLeft,
             children: [
-              Image.asset(
-                ImageConstant.imgUnsplashcfkwe7,
+              Image.memory(
+                imagepath!,
                 height: getSize(
                   375,
                 ),
