@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:flutter/services.dart';
+
  class User {
 late final int id;
 late final String userName;
@@ -16,9 +18,7 @@ factory User.fromJson(Map<String, dynamic> json) {
  userName: json['username'] as String,
  email: json['email'] as String,
  password: json['password'] as String,
-  image: json['avatar']  != null ? base64Decode(json['avatar']) : null,
-
-
+  image: json['avatar']  != null ? Uint8List.fromList(base64.decode(json['avatar'])) : null,
 
   // Parse other columns here
  );

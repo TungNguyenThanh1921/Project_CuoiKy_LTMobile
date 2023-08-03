@@ -6,9 +6,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gap/gap.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:projectflutter/core/app_export.dart';
+import 'package:projectflutter/models/user.dart';
 import 'package:projectflutter/presentation/details/widgets/action.dart';
 import 'package:projectflutter/presentation/details/widgets/category.dart';
+import 'dart:io';
+import 'package:http/http.dart' as http;
 
 import '../../ServerManager.dart';
 class Profile extends StatefulWidget {
@@ -17,10 +21,105 @@ class Profile extends StatefulWidget {
 }
 
 class _DetailsPage extends State<Profile>{
+  TextEditingController _nameController = TextEditingController();
+
+  Future<void> updateUserName(String sqlStatement) async {
+      final url = Uri.parse('http://${ServerManager().IpAddress}:8080/GetData?sql=${Uri.encodeQueryComponent(sqlStatement)}');
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+
+      } else {
+        print('Error calling API: ${response.statusCode}');
+
+      }
+
+  }
+  Future<void> _pickImageFromGallery() async {
+    final pickedFile = await ImagePicker().getImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      // Get the image file and convert it to bytes (Uint8List)
+      File imageFile = File(pickedFile.path);
+      Uint8List imageBytes = await imageFile.readAsBytes();
+
+      // Call the method to update the avatar on the server
+      if(imageBytes != null){
+        updateAvatar(imageBytes);
+      }
+
+
+      // Update the UI with the new avatar
+      setState(() {
+        ServerManager().user?.image = imageBytes;
+      });
+    }
+  }
+
+  Future<void> updateAvatar(Uint8List imageBytes) async {
+    String base64Image = base64Encode(imageBytes);
+    String sqlStatement =
+        "UPDATE Users SET avatar = '$base64Image' WHERE email = '${ServerManager().user?.email}'";
+
+    final url = Uri.parse('http://${ServerManager().IpAddress}:8080/GetData?sql=${Uri.encodeQueryComponent(sqlStatement)}');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      // Avatar updated successfully
+    } else {
+      print('Error calling API: ${response.statusCode}');
+    }
+  }
+
+  Future<void> _showNameInputDialog() async {
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Enter New Name"),
+        content: TextField(
+          controller: _nameController,
+          decoration: InputDecoration(
+            hintText: "New Name",
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () async {
+              String newUsername = _nameController.text.trim();
+              setState(() {
+                if (newUsername.isNotEmpty) {
+                  String sqlStatement =
+                      "UPDATE Users SET username = '$newUsername' WHERE email = '${ServerManager().user?.email}'";
+                  updateUserName(sqlStatement);
+                  // Update the username in ServerManager().user and UI
+                  User userTemp = User(id: ServerManager().user!.id, userName: newUsername, email: ServerManager().user!.email, password: ServerManager().user!.password, image: ServerManager().user!.image);
+                  ServerManager().InitUser(userTemp);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text("Username updated successfully!"),
+                    ),
+                  );
+                  Navigator.pop(context); // Close the input dialog
+                }
+              });
+            },
+            child: Text("Update"),
+          ),
+        ],
+      ),
+    );
+  }
 
 
   @override
   Widget build(BuildContext context) {
+
     Uint8List? userImage = ServerManager().user?.image;
     //getImageBytesFromAssets('assets/images/default_image.jpg');
     Uint8List? imagepath = ServerManager().img_default;
@@ -33,19 +132,28 @@ class _DetailsPage extends State<Profile>{
         Container();
       }
     return Scaffold(
-      backgroundColor: ColorConstant.fromHex('#ECE9FF'),
+      appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        backgroundColor: Colors.transparent, // Make the app bar transparent
+        elevation: 0, // Remove the shadow from the app bar
+        // You can also add other app bar settings like title, actions, etc. if needed.
+      ),
       body: Stack(
         children: [
           Stack(
             alignment: Alignment.topLeft,
             children: [
-              Image.memory(
-                imagepath!,
-                height: getSize(
-                  375,
+              GestureDetector(
+                onTap: _pickImageFromGallery, // Call _pickImageFromGallery when tapped
+                child: Image.memory(
+                  imagepath!,
+                  height: getSize(375),
+                  width: double.infinity,
+                  fit: BoxFit.fill,
                 ),
-                width: double.infinity,
-                fit: BoxFit.fill,
               ),
               Container(
                 width: size.width,
@@ -112,8 +220,10 @@ class _DetailsPage extends State<Profile>{
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(
-                            "Trang",
+                        GestureDetector(
+                        onTap: _showNameInputDialog,
+                        child: Text(
+                          ServerManager().user!.userName,// Ten user
                             overflow: TextOverflow.ellipsis,
                             textAlign: TextAlign.left,
                             style: TextStyle(
@@ -124,7 +234,7 @@ class _DetailsPage extends State<Profile>{
                               fontFamily: 'General Sans',
                               fontWeight: FontWeight.w600,
                             ),
-                          ),
+                          )),
                           const Gap(8),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.start,
