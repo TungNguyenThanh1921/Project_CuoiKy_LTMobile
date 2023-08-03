@@ -38,7 +38,7 @@ String encodeImageToVarBinary(Uint8List imageBytes) {
 
 
 class Frame10 extends StatelessWidget {
-  final TextEditingController usernameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   Future<bool> CheckLogin(String sqlStatement) async {
     final url = Uri.parse('http://${ServerManager().IpAddress}:8080/GetData?sql=${Uri.encodeQueryComponent(sqlStatement)}');
@@ -98,9 +98,9 @@ class Frame10 extends StatelessWidget {
                 height: 50,
                 margin: EdgeInsets.symmetric(horizontal: (screenWidth - 300) / 2),
                 child: TextField(
-                  controller: usernameController,
+                  controller: emailController,
                   decoration: InputDecoration(
-                    hintText: 'Username',
+                    hintText: 'Email',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10.0),
                     ),
@@ -129,7 +129,7 @@ class Frame10 extends StatelessWidget {
                 children: [
                   TextButton(
                     onPressed: () {
-                      String sql = "select user_id, username, email, password, avatar from Users where username = '${usernameController.text.trim()}' and password = '${passwordController.text.trim()}'";
+                      String sql = "select user_id, username, email, password, avatar from Users where email = '${emailController.text.trim()}' and password = '${passwordController.text.trim()}'";
                       CheckLogin(sql).then((isLoggedIn) {
                         if(isLoggedIn == true)
                         {
