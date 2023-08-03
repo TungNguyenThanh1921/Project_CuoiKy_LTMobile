@@ -4,55 +4,52 @@ class ChatModel {
   ChatModel({
     required this.image,
     required this.title,
-    required this.pinned,
-    required this.muted,
-    required this.archived,
     required this.name,
-    required this.lastMessage,
-    required this.date,
-    required this.unread,
-    required this.membersCount,
-    required this.groupMembers,
+   // required this.lastMessage,
+   required this.date,
+    //required this.unread,
+   // required this.membersCount,
+  //  required this.groupMembers,
   });
 
   final String image;
   final String title;
-  final bool pinned;
-  final bool muted;
-  final bool archived;
+  // final bool pinned;
+  // final bool muted;
+  // final bool archived;
   final String name;
-  final String lastMessage;
-  final String date;
-  final int unread;
-  final String membersCount;
-  final List<String> groupMembers;
+  // final String lastMessage;
+   final DateTime date;
+  // final int unread;
+  // final String membersCount;
+ // final List<String> groupMembers;
 
   factory ChatModel.fromJson(Map<String, dynamic> json) => ChatModel(
         image: json["image"],
         title: json["title"],
-        pinned: json["pinned"],
-        muted: json["muted"],
-        archived: json["archived"],
-        name: json["name"],
-        lastMessage: json["lastMessage"],
-        date: json["date"],
-        unread: json["messagesCount"],
-        membersCount: json["membersCount"],
-        groupMembers: List<String>.from(json["groupMembers"].map((x) => x)),
+       // pinned: json["pinned"],
+        //muted: json["muted"],
+       // archived: json["archived"],
+        name: json["name"] as String,
+       // lastMessage: json["lastMessage"],
+        date:json["date"],
+     //   unread: json["messagesCount"],
+     //   membersCount: json["membersCount"],
+      //  groupMembers: List<String>.from(json["groupMembers"].map((x) => x)),
       );
 
   Map<String, dynamic> toJson() => {
         "image": image,
         "title": title,
-        "pinned": pinned,
-        "muted": muted,
-        "archived": archived,
+      //  "pinned": pinned,
+      //  "muted": muted,
+       // "archived": archived,
         "name": name,
-        "lastMessage": lastMessage,
+       // "lastMessage": lastMessage,
         "date": date,
-        "messagesCount": unread,
-        "membersCount": membersCount,
-        "groupMembers": List<dynamic>.from(groupMembers.map((x) => x)),
+      //  "messagesCount": unread,
+      //  "membersCount": membersCount,
+      //  "groupMembers": List<dynamic>.from(groupMembers.map((x) => x)),
       };
 }
 

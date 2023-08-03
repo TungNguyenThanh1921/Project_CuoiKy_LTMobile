@@ -8,6 +8,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:projectflutter/Views/Register.dart';
 import 'package:projectflutter/main.dart';
+import 'package:projectflutter/models/conversation.dart';
+import 'package:projectflutter/models/messages.dart';
 
 import 'package:projectflutter/models/user.dart';
 import 'package:projectflutter/presentation/chats_screen/chats_screen.dart';
@@ -66,6 +68,46 @@ class Frame10 extends StatelessWidget {
     }
     return false;
   }
+
+  Future<void> InitRooms(String sqlStatement) async {
+    final url = Uri.parse('http://${ServerManager().IpAddress}:8080/GetData?sql=${Uri.encodeQueryComponent(sqlStatement)}');
+    //final Uri url = Uri.parse('$serverAddress');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final List<dynamic> jsonList = json.decode(response.body);
+        List<Conversation> dataList = [];
+        for (var jsonRow in jsonList)
+        {
+          Conversation data = Conversation.fromJson(jsonRow);
+
+          dataList.add(data);
+        }
+        ServerManager().InitConversation(dataList);
+    } else {
+      print('Lỗi khi gọi API: ${response.statusCode}');
+    }
+
+  }
+
+  Future<void> InitMessage(String sqlStatement) async {
+    final url = Uri.parse('http://${ServerManager().IpAddress}:8080/GetData?sql=${Uri.encodeQueryComponent(sqlStatement)}');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final List<dynamic> jsonList = json.decode(response.body);
+        List<Messages> dataList = [];
+        for (var jsonRow in jsonList) {
+          Messages data = Messages.fromJson(jsonRow);
+          dataList.add(data);
+        }
+        ServerManager().InitMessages(dataList);
+    } else {
+      print('Lỗi khi gọi API: ${response.statusCode}');
+    }
+
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -130,17 +172,21 @@ class Frame10 extends StatelessWidget {
                 children: [
                   TextButton(
                     onPressed: () {
+                      String sql_initRoom = 'select * from Conversation';
+                      InitRooms(sql_initRoom);
+                      String sql_initMessage = 'select * from Message';
+                      InitMessage(sql_initMessage);
                       String sql = "select user_id, username, email, password, avatar from Users where email = '${emailController.text.trim()}' and password = '${passwordController.text.trim()}'";
                       CheckLogin(sql).then((isLoggedIn) {
                         if(isLoggedIn == true)
                         {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              // builder: (context) => ChatApp(ipAddress: ipAddress),
-                                builder: (context) => ChatsScreen()
-                            ),
-                          );
+
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => ChatsScreen()
+                                    ),
+                                  );
                         }
                       });
                       // Thêm hành động khi người dùng nhấn nút vào đây

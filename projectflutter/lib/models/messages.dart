@@ -7,7 +7,7 @@ class Messages {
   late final int sender_id;
   late final String content;
   late final Uint8List? image;
-  late final DateTime sent_at;
+  late final DateTime? sent_at;
   Messages({
     required this.id,
     required this.conversation_id,
@@ -19,13 +19,12 @@ class Messages {
 
   factory Messages.fromJson(Map<String, dynamic> json) {
     return Messages(
-      id: json['user_id'] as int,
+      id: json['message_id'] as int,
       conversation_id: json['conversation_id'] as int,
       sender_id: json['sender_user_id'] as int,
-      content: json['[content]'] as String,
-      image: json['avatar']  != null ? base64Decode(json['avatar']) : null,
-      sent_at: json['sent_at'] as DateTime,
-
+      content: json['content'] as String,
+      image: json['avatar'] != null ? base64Decode(json['avatar']) : null,
+      sent_at: json['sent_at'] != null ? DateTime.parse(json['sent_at']) : DateTime.now(),
     );
   }
 }
