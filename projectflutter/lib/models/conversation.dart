@@ -18,11 +18,25 @@ class Conversation {
 
   factory Conversation.fromJson(Map<String, dynamic> json) {
     return Conversation(
-      id: json['user_id'] as int,
+      id: json['conversation_id'] as int,
       name: json['conversation_name'] as String,
       user_id: json['user_id'] as int,
-      create_at: json['create_at'] as DateTime,
-      is_private: json['isPrivate'] as bool,
+      create_at: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : DateTime.now(),
+      is_private: json['IsPrivate'] as bool,
     );
   }
+
+  Map<String, dynamic> toJson(){ return{
+
+  "image": "assets/images/default_image.jpg",
+  "title": name,
+
+  "name": user_id.toString(),
+
+  "date": create_at,
+
+  };
+}
 }

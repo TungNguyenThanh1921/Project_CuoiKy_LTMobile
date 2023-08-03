@@ -2,6 +2,8 @@
 import 'dart:typed_data';
 
 import 'package:flutter/services.dart';
+import 'package:projectflutter/models/conversation.dart';
+import 'package:projectflutter/models/messages.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:projectflutter/models/user.dart';
@@ -16,14 +18,34 @@ class ServerManager
   }
   static final ServerManager _instance = ServerManager._internal();
   factory ServerManager() => _instance;
-  User? _user;
+
   WebSocketChannel? _channel;
   String IpAddress = '';
   ServerManager._internal();
+
+  User? _user;
   void InitUser(User tempUser)
   {
     _user = tempUser;
   }
+  User? get user => _user;
+
+
+  List<Conversation>? _conversation;
+  void InitConversation(List<Conversation> temp)
+  {
+    _conversation = List.from(temp);
+  }
+  List<Conversation>? get conversation => _conversation;
+
+  List<Messages>? _messages;
+  void InitMessages(List<Messages> temp)
+  {
+    _messages = List.from(temp);
+  }
+  List<Messages>? get messages => _messages;
+
+
   void connect(String ipAddress) {
     _channel = IOWebSocketChannel.connect('ws://$ipAddress:9090');
     IpAddress = ipAddress;
@@ -31,7 +53,7 @@ class ServerManager
   }
 
   WebSocketChannel? get channel => _channel;
-  User? get user => _user;
+
   Uint8List? get img_default => imageDefault;
   void dispose() {
     _channel?.sink.close();

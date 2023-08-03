@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gap/gap.dart';
+import 'package:projectflutter/ServerManager.dart';
 import 'package:projectflutter/core/app_export.dart';
+import 'package:projectflutter/models/conversation.dart';
+import 'package:projectflutter/models/messages.dart';
+import 'package:projectflutter/models/user.dart';
 import 'package:projectflutter/presentation/details/page.dart';
 
 import 'models/chat_model.dart';
@@ -157,9 +161,13 @@ class ChatsScreen extends StatelessWidget {
               padding: const EdgeInsets.only(top: 10, bottom: 10),
               physics: const NeverScrollableScrollPhysics(),
               shrinkWrap: true,
-              itemCount: itemsList.length,
+              itemCount: ServerManager().conversation?.length,
               itemBuilder: (context, index) {
-                final item = ChatModel.fromJson(itemsList[index]);
+                List<Conversation>? ls = ServerManager().conversation;
+                User? us = ServerManager().user;
+                List<Messages>? ms = ServerManager().messages;
+                var temjson = ServerManager().conversation?[index].toJson();
+                final item = ChatModel.fromJson(temjson!); //ServerManager().conversation![index].toJson()
                 return ChatsItemWidget(item);
               },
             ),
