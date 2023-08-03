@@ -242,7 +242,7 @@ class ChatsItemWidget extends StatelessWidget {
                   onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (_) => ChatApp())),
+                          builder: (_) => ChatApp(id_room: item.id_room,))),
                   child: Container(
                     alignment: Alignment.center,
                     padding: EdgeInsets.only(

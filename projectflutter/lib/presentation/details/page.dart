@@ -44,17 +44,17 @@ class _DetailsPage extends State<Profile>{
       Uint8List imageBytes = await imageFile.readAsBytes();
 
       // Call the method to update the avatar on the server
-      if(imageBytes != null){
-        updateAvatar(imageBytes);
+      if (imageBytes != null) {
+        await updateAvatar(imageBytes);
+
+        // Update the UI with the new avatar after successful update on the server
+        setState(() {
+          ServerManager().user?.image = imageBytes;
+        });
       }
-
-
-      // Update the UI with the new avatar
-      setState(() {
-        ServerManager().user?.image = imageBytes;
-      });
     }
   }
+
 
   Future<void> updateAvatar(Uint8List imageBytes) async {
     String base64Image = base64Encode(imageBytes);
@@ -125,7 +125,7 @@ class _DetailsPage extends State<Profile>{
     Uint8List? imagepath = ServerManager().img_default;
     if(userImage != null )
     {
-      imagepath = 'data:image/jpeg;base64,${base64Encode(userImage)}' as Uint8List?;
+      imagepath = userImage;// 'data:image/jpeg;base64,${base64Encode(userImage)}' as Uint8List?;
     }
     if(imagepath == null)
       {

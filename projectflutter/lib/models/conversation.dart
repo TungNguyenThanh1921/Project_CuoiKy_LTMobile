@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:projectflutter/ServerManager.dart';
+
 class Conversation {
   late final int id;
   late final String name;
@@ -33,10 +35,10 @@ class Conversation {
   "image": "assets/images/default_image.jpg",
   "title": name,
 
-  "name": user_id.toString(),
+  "name": ServerManager().getNameUser(user_id),
 
   "date": create_at,
-
+"id_room": id,
   };
 }
 }

@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:projectflutter/Views/screenImageView.dart';
+import 'package:projectflutter/models/messages.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'dart:io';
 import 'package:projectflutter/ServerManager.dart';
@@ -67,12 +68,14 @@ class _IPAddressScreenState extends State<IPAddressScreen> {
 }
 
 class ChatApp extends StatefulWidget {
-
+  final int id_room;
+  ChatApp({required this.id_room});
   @override
   _ChatAppState createState() => _ChatAppState();
 }
 
 class _ChatAppState extends State<ChatApp> {
+
   late final ScrollController _scrollController = ScrollController();
   late final WebSocketChannel channel;
   final TextEditingController _textController = TextEditingController();
@@ -87,10 +90,52 @@ class _ChatAppState extends State<ChatApp> {
     channel.sink.close();
     super.dispose();
   }
+  Future<void> SaveMessageToDataBase(String sqlStatement) async {
+    final url = Uri.parse('http://${ServerManager().IpAddress}:8080/GetData?sql=${Uri.encodeQueryComponent(sqlStatement)}');
+    //final Uri url = Uri.parse('$serverAddress');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+
+    } else {
+      print('Lỗi khi gọi API: ${response.statusCode}');
+    }
+
+  }
+  void InitMessageInRoom()  {
+      //intit own client name
+      clientName = ServerManager().user!.userName;
+      if(ServerManager().messages!.length > 0)
+        {
+          List<Message> list_message_inroom = [];
+          for (Messages data in ServerManager().messages!)
+          {
+            if(data.conversation_id == widget.id_room)
+              {
+                Message temp;
+                String? name = ServerManager().getNameUser(data.sender_id);
+                if(data.content != null)
+                  {
+                    temp = Message(MessageType.text, data.content, senderName: name!, timestamp: data.sent_at!,avatar: ServerManager().getAvatarUser(ServerManager().user!.id));
+                  }
+                else
+                  {
+                    temp = Message(MessageType.image, data.image as String, senderName: name!, timestamp: data.sent_at!, avatar: ServerManager().getAvatarUser(ServerManager().user!.id));
+                  }
+
+                list_message_inroom.add(temp);
+              }
+          }
+          messages = List.from(list_message_inroom);
+        }
+
+  }
+
 
   @override
   void initState() {
     super.initState();
+    InitMessageInRoom();
     //channel = IOWebSocketChannel.connect('ws://${widget.ipAddress}:9090');
     ServerManager().channel?.stream.listen((dynamic data) {
       if (data is List<int>) {
@@ -99,12 +144,12 @@ class _ChatAppState extends State<ChatApp> {
 
         if (prefix == 'text ') {
           final textMessage = utf8.decode(content);
-          final message = Message(MessageType.text, textMessage, senderName: 'Receiver', timestamp: DateTime.now());
+          final message = Message(MessageType.text, textMessage, senderName: 'Receiver', timestamp: DateTime.now(), avatar: ServerManager().getAvatarUser(ServerManager().user!.id));
           setState(() {
             messages.add(message);
           });
         } else if (prefix == 'image') {
-          final message = Message(MessageType.image, base64Encode(content), senderName: 'Receiver', timestamp: DateTime.now());
+          final message = Message(MessageType.image, base64Encode(content), senderName: 'Receiver', timestamp: DateTime.now(), avatar: ServerManager().getAvatarUser(ServerManager().user!.id));
           setState(() {
             messages.add(message);
           });
@@ -117,7 +162,7 @@ class _ChatAppState extends State<ChatApp> {
           curve: Curves.easeInOut,
         );
       } else if (data is String) {
-        final message = Message(MessageType.text, data, senderName: 'Receiver', timestamp: DateTime.now());
+        final message = Message(MessageType.text, data, senderName: 'Receiver', timestamp: DateTime.now(), avatar: ServerManager().getAvatarUser(ServerManager().user!.id));
         setState(() {
           messages.add(message);
         });
@@ -131,7 +176,7 @@ class _ChatAppState extends State<ChatApp> {
       }
     });
 
-   // fetchData();
+    _loadMessages();
 
   }
 
@@ -141,17 +186,23 @@ class _ChatAppState extends State<ChatApp> {
     if (image != null) {
       final bytes = File(image.path).readAsBytesSync();
       ServerManager().channel?.sink.add(Uint8List.fromList([...utf8.encode('image'), ...bytes]));
-      final formattedMessage = Message(MessageType.image, base64Encode(bytes), senderName: clientName, timestamp: DateTime.now());
+      final formattedMessage = Message(MessageType.image, base64Encode(bytes), senderName: clientName, timestamp: DateTime.now(), avatar: ServerManager().getAvatarUser(ServerManager().user!.id));
       setState(() {
         messages.add(formattedMessage);
       });
+
+      String sql = "INSERT INTO Message (conversation_id, sender_user_id, content, img) VALUES (${widget.id_room}, ${ServerManager().user!.id}, NULL, ${base64Encode(bytes)})";
+      SaveMessageToDataBase(sql);
     } else {
       final textMessage = message;
       ServerManager().channel?.sink.add(utf8.encode(textMessage));
-      final formattedMessage = Message(MessageType.text, textMessage, senderName: clientName, timestamp: DateTime.now());
+      final formattedMessage = Message(MessageType.text, textMessage, senderName: clientName, timestamp: DateTime.now(), avatar: ServerManager().getAvatarUser(ServerManager().user!.id));
       setState(() {
         messages.add(formattedMessage);
       });
+
+      String sql = "INSERT INTO Message (conversation_id, sender_user_id, content, img) VALUES (${widget.id_room}, ${ServerManager().user!.id}, N'${textMessage.toString()}',NULL)";
+      SaveMessageToDataBase(sql);
     }
 
     _textController.clear();
@@ -167,30 +218,6 @@ class _ChatAppState extends State<ChatApp> {
       duration: Duration(milliseconds: 300),
       curve: Curves.easeInOut,
     );
-  }
-
-  void fetchData() async {
-    final url = Uri.parse('http://${ServerManager().IpAddress}:8080/data');
-    final response = await http.get(url);
-
-    if (response.statusCode == 200) {
-      final jsonData = json.decode(response.body);
-      List<String> chatSamples = List<String>.from(jsonData['chat_samples']);
-      for(int i=0; i< chatSamples.length;i++){
-        if(chatSamples[i].isEmpty){
-          chatSamples[i] = "";
-        }
-        else if(chatSamples[i] is int){
-          chatSamples[i] = chatSamples[i].toString();
-        }
-      }
-      setState(() {
-        this.chatSamples = chatSamples;
-        selectedChatSample = this.chatSamples[0];
-      });
-    } else {
-      print('Lỗi khi gọi API: ${response.statusCode}');
-    }
   }
 
   Future<void> _pickImage() async {
@@ -210,30 +237,11 @@ class _ChatAppState extends State<ChatApp> {
     return formattedTime;
   }
 
-
-  Future<bool> CheckLogin() async {
-    final url = Uri.parse('http://${ServerManager().IpAddress}:8080/data');
-    final response = await http.get(url);
-
-    if (response.statusCode == 200) {
-      final jsonData = json.decode(response.body);
-      List<String> chatSamples = List<String>.from(jsonData['chat_samples']);
-      for(int i=0; i< chatSamples.length;i++){
-        if(chatSamples[i].isEmpty){
-          chatSamples[i] = "";
-        }
-        else if(chatSamples[i] is int){
-          chatSamples[i] = chatSamples[i].toString();
-        }
-      }
-      setState(() {
-        this.chatSamples = chatSamples;
-        selectedChatSample = this.chatSamples[0];
-      });
-    } else {
-      print('Lỗi khi gọi API: ${response.statusCode}');
-    }
-    return true;
+  Widget _buildAvatar(String senderName) {
+    return CircleAvatar(
+      child: Text(senderName[0]), // Hiển thị chữ cái đầu của tên người gửi như avatar
+      backgroundColor: Colors.blue, // Màu nền của avatar
+    );
   }
 
   Widget _buildMessageItem(Message message) {
@@ -258,56 +266,100 @@ class _ChatAppState extends State<ChatApp> {
         onTap: () => _onImageTap(context, message.content), // Pass the base64 image to the function
         child: Container(
           alignment: isSent ? Alignment.centerRight : Alignment.centerLeft,
-          child: Container(
-            padding: EdgeInsets.all(10),
-            margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: radius,
-            ),
-            child: Column(
-              crossAxisAlignment: align,
-              children: [
-                Image.memory(imageBytes, height: 150, width: 150),
-                SizedBox(height: 4),
-                Text(
-                  _formatTimestamp(message.timestamp),
-                  style: TextStyle(fontSize: 12, color: Colors.black),
-                  textAlign: TextAlign.end,
+          child: Row(
+            mainAxisAlignment: isSent ? MainAxisAlignment.end : MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              if (!isSent) // Nếu căn trái (không gửi tin nhắn), thêm khung avatar trước text
+                Container(
+                  margin: EdgeInsets.only(right: 8.0),
+                  child: CircleAvatar(
+                    backgroundImage: MemoryImage(message.avatar as Uint8List), // Thay bằng ảnh đại diện của bạn
+                  ),
                 ),
-              ],
-            ),
+              Container(
+                padding: EdgeInsets.all(10),
+                margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: bgColor,
+                  borderRadius: radius,
+                ),
+                child: Column(
+                  crossAxisAlignment: align,
+                  children: [
+                    Image.memory(imageBytes, height: 150, width: 150),
+                    SizedBox(height: 4),
+                    Text(
+                      _formatTimestamp(message.timestamp),
+                      style: TextStyle(fontSize: 12, color: Colors.black),
+                      textAlign: TextAlign.end,
+                    ),
+                  ],
+                ),
+              ),
+              if (isSent) // Nếu căn phải (gửi tin nhắn), thêm khung avatar sau text
+                Container(
+                  margin: EdgeInsets.only(left: 8.0),
+                  child: CircleAvatar(
+                    backgroundImage: MemoryImage(message.avatar as Uint8List), // Thay bằng ảnh đại diện của bạn
+                  ),
+                ),
+            ],
           ),
         ),
       );
     } else if (message.type == MessageType.text) {
       return Container(
         alignment: isSent ? Alignment.centerRight : Alignment.centerLeft,
-        child: Container(
-          padding: EdgeInsets.all(10),
-          margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          decoration: BoxDecoration(
-            color: bgColor,
-            borderRadius: radius,
-          ),
-          child: Column(
-            crossAxisAlignment: align,
-            children: [
-              Text(
-                message.content,
-                style: TextStyle(fontSize: 16, color: Colors.black),
-                textAlign: align == CrossAxisAlignment.end ? TextAlign.end : TextAlign.start,
+        child: Row(
+          mainAxisAlignment: isSent ? MainAxisAlignment.end : MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            if (!isSent) // Nếu căn trái (không gửi tin nhắn), thêm khung avatar trước text
+              Container(
+                margin: EdgeInsets.only(right: 8.0),
+                child: CircleAvatar(
+                  backgroundImage: MemoryImage(message.avatar as Uint8List), // Thay bằng ảnh đại diện của bạn
+                ),
               ),
-              SizedBox(height: 4),
-              Text(
-                _formatTimestamp(message.timestamp),
-                style: TextStyle(fontSize: 12, color: Colors.black),
-                textAlign: TextAlign.end,
+            Flexible( // Sử dụng Flexible để giới hạn không gian của Container cha
+              child: Container(
+                padding: EdgeInsets.all(10),
+                margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: bgColor,
+                  borderRadius: BorderRadius.circular(20.0), // Đặt bán kính bo tròn là 20.0 (có thể thay đổi theo ý muốn)
+                ),
+                child: Column(
+                  crossAxisAlignment: align,
+                  children: [
+                    Text(
+                      message.content,
+                      style: TextStyle(fontSize: 16, color: Colors.black),
+                      textAlign: align == CrossAxisAlignment.end ? TextAlign.end : TextAlign.start,
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      _formatTimestamp(message.timestamp),
+                      style: TextStyle(fontSize: 12, color: Colors.black),
+                      textAlign: TextAlign.end,
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
+            ),
+            if (isSent) // Nếu căn phải (gửi tin nhắn), thêm khung avatar sau text
+              Container(
+                margin: EdgeInsets.only(left: 8.0),
+                child: CircleAvatar(
+                  backgroundImage: MemoryImage(message.avatar as Uint8List), // Thay bằng ảnh đại diện của bạn
+                ),
+              ),
+          ],
         ),
       );
+
+
     } else {
       return Container();
     }
@@ -354,6 +406,17 @@ class _ChatAppState extends State<ChatApp> {
     }
   }
 
+  void _loadMessages() {
+    // Simulate loading your list of messages
+    List<Message> messages = this.messages; // Replace this with your actual loading logic
+
+    // After loading messages, scroll to the end
+    WidgetsBinding.instance?.addPostFrameCallback((_) {
+    _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+    // or use animateTo for smooth scrolling
+    // _scrollController.animateTo(_scrollController.position.maxScrollExtent, duration: Duration(milliseconds: 300), curve: Curves.easeInOut);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -376,6 +439,7 @@ class _ChatAppState extends State<ChatApp> {
               ),
             ),
             Container(
+
               padding: const EdgeInsets.all(8.0),
               child: Row(
                 children: [
@@ -389,7 +453,7 @@ class _ChatAppState extends State<ChatApp> {
                       child: TextField(
                         controller: _textController,
                         decoration: InputDecoration(
-                          hintText: 'Enter a message...',
+                          hintText: 'Nhập nội dung...',
                           border: InputBorder.none,
                         ),
                       ),
@@ -411,33 +475,7 @@ class _ChatAppState extends State<ChatApp> {
                 ],
               ),
             ),
-            Container(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      onChanged: (value) {
-                        setState(() {
-                          clientName = value;
-                        });
-                      },
-                      decoration: InputDecoration(
-                        hintText: 'Enter your name',
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.done),
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Client name: $clientName')),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
+
           ],
         ),
       ),
@@ -455,6 +493,6 @@ class Message {
   String content;
   String senderName;
   DateTime timestamp;
-
-  Message(this.type, this.content, {required this.senderName, required this.timestamp});
+  Uint8List? avatar;
+  Message(this.type, this.content, {required this.senderName, required this.timestamp, required this.avatar});
 }

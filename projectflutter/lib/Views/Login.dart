@@ -108,6 +108,24 @@ class Frame10 extends StatelessWidget {
 
   }
 
+  Future<void> InitListUser(String sqlStatement) async {
+    final url = Uri.parse('http://${ServerManager().IpAddress}:8080/GetData?sql=${Uri.encodeQueryComponent(sqlStatement)}');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final List<dynamic> jsonList = json.decode(response.body);
+      List<User> dataList = [];
+      for (var jsonRow in jsonList) {
+        User data = User.fromJson(jsonRow);
+        dataList.add(data);
+      }
+      ServerManager().InitListUser(dataList);
+    } else {
+      print('Lỗi khi gọi API: ${response.statusCode}');
+    }
+
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -176,6 +194,8 @@ class Frame10 extends StatelessWidget {
                       InitRooms(sql_initRoom);
                       String sql_initMessage = 'select * from Message';
                       InitMessage(sql_initMessage);
+                      String sql_initUser = 'select user_id, username, email, password, avatar from Users';
+                      InitListUser(sql_initUser);
                       String sql = "select user_id, username, email, password, avatar from Users where email = '${emailController.text.trim()}' and password = '${passwordController.text.trim()}'";
                       CheckLogin(sql).then((isLoggedIn) {
                         if(isLoggedIn == true)

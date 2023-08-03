@@ -7,6 +7,7 @@ class ChatModel {
     required this.name,
    // required this.lastMessage,
    required this.date,
+   required this.id_room,
     //required this.unread,
    // required this.membersCount,
   //  required this.groupMembers,
@@ -20,6 +21,7 @@ class ChatModel {
   final String name;
   // final String lastMessage;
    final DateTime date;
+   final int id_room;
   // final int unread;
   // final String membersCount;
  // final List<String> groupMembers;
@@ -33,6 +35,7 @@ class ChatModel {
         name: json["name"] as String,
        // lastMessage: json["lastMessage"],
         date:json["date"],
+     id_room: json["id_room"],
      //   unread: json["messagesCount"],
      //   membersCount: json["membersCount"],
       //  groupMembers: List<String>.from(json["groupMembers"].map((x) => x)),
@@ -47,6 +50,7 @@ class ChatModel {
         "name": name,
        // "lastMessage": lastMessage,
         "date": date,
+    "id_room": id_room,
       //  "messagesCount": unread,
       //  "membersCount": membersCount,
       //  "groupMembers": List<dynamic>.from(groupMembers.map((x) => x)),

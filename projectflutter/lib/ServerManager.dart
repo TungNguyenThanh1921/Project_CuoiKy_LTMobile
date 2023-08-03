@@ -30,6 +30,13 @@ class ServerManager
   }
   User? get user => _user;
 
+  List<User>? _list_user;
+  void InitListUser(List<User> tempUser)
+  {
+    _list_user =List.from(tempUser);
+  }
+  List<User>? get list_user => _list_user;
+
 
   List<Conversation>? _conversation;
   void InitConversation(List<Conversation> temp)
@@ -57,5 +64,38 @@ class ServerManager
   Uint8List? get img_default => imageDefault;
   void dispose() {
     _channel?.sink.close();
+  }
+
+
+  //// a lot of function to get information
+
+
+
+  String? getNameUser(int id)
+  {
+    for(var data in _list_user!)
+      {
+        if(data.id == id)
+          {
+            return data.userName;
+          }
+      }
+    return null;
+  }
+
+  Uint8List? getAvatarUser(int id)
+  {
+    for(var data in _list_user!)
+    {
+      if(data.id == id)
+      {
+        if(data.image == null)
+          {
+            return imageDefault;
+          }
+        return data.image;
+      }
+    }
+    return null;
   }
 }
