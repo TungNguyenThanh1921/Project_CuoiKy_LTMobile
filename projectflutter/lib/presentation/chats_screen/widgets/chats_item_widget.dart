@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gap/gap.dart';
@@ -39,8 +41,8 @@ class ChatsItemWidget extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.max,
               children: [
-                Image.asset(
-                  item.image,
+                Image.memory(
+                  item.image as Uint8List,
                   height: getSize(
                     64,
                   ),

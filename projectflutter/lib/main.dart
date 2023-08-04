@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:projectflutter/Views/screenImageView.dart';
 import 'package:projectflutter/models/messages.dart';
+import 'package:projectflutter/presentation/chats_screen/chats_screen.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'dart:io';
 import 'package:projectflutter/ServerManager.dart';
@@ -87,7 +88,7 @@ class _ChatAppState extends State<ChatApp> {
   PickedFile? _pickedImage;
   @override
   void dispose() {
-    channel.sink.close();
+    ServerManager().OnRoomNumber = -1;
     super.dispose();
   }
   Future<void> SaveMessageToDataBase(String sqlStatement) async {
@@ -116,11 +117,11 @@ class _ChatAppState extends State<ChatApp> {
                 String? name = ServerManager().getNameUser(data.sender_id);
                 if(data.content != null)
                   {
-                    temp = Message(MessageType.text, data.content, senderName: name!, timestamp: data.sent_at!,avatar: ServerManager().getAvatarUser(ServerManager().user!.id));
+                    temp = Message(MessageType.text, data.content, senderName: name!, timestamp: data.sent_at!,avatar: ServerManager().getAvatarUser(data.sender_id));
                   }
                 else
                   {
-                    temp = Message(MessageType.image, data.image as String, senderName: name!, timestamp: data.sent_at!, avatar: ServerManager().getAvatarUser(ServerManager().user!.id));
+                    temp = Message(MessageType.image, data.image as String, senderName: name!, timestamp: data.sent_at!, avatar: ServerManager().getAvatarUser(data.sender_id));
                   }
 
                 list_message_inroom.add(temp);
@@ -135,9 +136,16 @@ class _ChatAppState extends State<ChatApp> {
   @override
   void initState() {
     super.initState();
+    ServerManager().OnRoomNumber = widget.id_room;
     InitMessageInRoom();
+    ServerManager().registerChatRoomCallback(_onChatRoomReload);
     //channel = IOWebSocketChannel.connect('ws://${widget.ipAddress}:9090');
-    ServerManager().channel?.stream.listen((dynamic data) {
+
+
+    _loadMessages();
+
+  }
+  void _onChatRoomReload(dynamic data) {
       if (data is List<int>) {
         final prefix = utf8.decode(data.sublist(0, 5));
         final content = data.sublist(5);
@@ -161,47 +169,75 @@ class _ChatAppState extends State<ChatApp> {
           duration: Duration(milliseconds: 300),
           curve: Curves.easeInOut,
         );
-      } else if (data is String) {
-        final message = Message(MessageType.text, data, senderName: 'Receiver', timestamp: DateTime.now(), avatar: ServerManager().getAvatarUser(ServerManager().user!.id));
-        setState(() {
-          messages.add(message);
-        });
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        );
+      }  else if (data is String) {
+        // Xử lý dữ liệu nhận được từ server là JSON
+        try {
+          final jsonData = jsonDecode(data);
+          final type = jsonData['type'];
+          final content = jsonData['content'];
+          final roomId = jsonData['roomId'] ;
+
+          // Kiểm tra xem dữ liệu có đúng là tin nhắn trong phòng chat hiện tại không
+          if (roomId == widget.id_room.toString()) {
+            // Xử lý tin nhắn ở đây, ví dụ:
+            if (type == 'text') {
+              final message = Message(MessageType.text, content, senderName: 'Receiver', timestamp: DateTime.now(), avatar: ServerManager().getAvatarUser(ServerManager().user!.id));
+              setState(() {
+                messages.add(message);
+              });
+            } else if (type == 'image') {
+              final message = Message(MessageType.image, content, senderName: 'Receiver', timestamp: DateTime.now(), avatar: ServerManager().getAvatarUser(ServerManager().user!.id));
+              setState(() {
+                messages.add(message);
+              });
+            } else {
+              print('Received unexpected data format: $type');
+            }
+            _scrollController.animateTo(
+              _scrollController.position.maxScrollExtent,
+              duration: Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+            );
+          } else {
+            print('Received message from another room.');
+          }
+        } catch (e) {
+          print('Error parsing JSON: $e');
+        }
       } else {
         print('Received unexpected data type: ${data.runtimeType}');
       }
-    });
-
-    _loadMessages();
-
   }
-
   void sendMessage(String message, PickedFile? image) {
     if (message.isEmpty && image == null) return;
+    final data = {
+      'type': 'text', // Hoặc 'image' nếu bạn muốn gửi tin nhắn hình ảnh
+      'roomId': '${widget.id_room}',
+      'content': message,
+    };
 
     if (image != null) {
       final bytes = File(image.path).readAsBytesSync();
-      ServerManager().channel?.sink.add(Uint8List.fromList([...utf8.encode('image'), ...bytes]));
+      data['type'] = 'image';
+      data['content'] = base64Encode(bytes);
+      ServerManager().channel?.sink.add(json.encode(data));
       final formattedMessage = Message(MessageType.image, base64Encode(bytes), senderName: clientName, timestamp: DateTime.now(), avatar: ServerManager().getAvatarUser(ServerManager().user!.id));
       setState(() {
         messages.add(formattedMessage);
       });
 
+
       String sql = "INSERT INTO Message (conversation_id, sender_user_id, content, img) VALUES (${widget.id_room}, ${ServerManager().user!.id}, NULL, ${base64Encode(bytes)})";
       SaveMessageToDataBase(sql);
     } else {
-      final textMessage = message;
-      ServerManager().channel?.sink.add(utf8.encode(textMessage));
-      final formattedMessage = Message(MessageType.text, textMessage, senderName: clientName, timestamp: DateTime.now(), avatar: ServerManager().getAvatarUser(ServerManager().user!.id));
+      final ms = json.encode(data);
+      ServerManager().channel?.sink.add(ms);
+      final formattedMessage = Message(MessageType.text, message, senderName: clientName, timestamp: DateTime.now(), avatar: ServerManager().getAvatarUser(ServerManager().user!.id));
       setState(() {
         messages.add(formattedMessage);
       });
 
-      String sql = "INSERT INTO Message (conversation_id, sender_user_id, content, img) VALUES (${widget.id_room}, ${ServerManager().user!.id}, N'${textMessage.toString()}',NULL)";
+      String sql = "INSERT INTO Message (conversation_id, sender_user_id, content, img) VALUES (${widget.id_room}, ${ServerManager().user!.id}, N'${message.toString()}',NULL)";
       SaveMessageToDataBase(sql);
     }
 
@@ -423,10 +459,29 @@ class _ChatAppState extends State<ChatApp> {
     return MaterialApp(
       title: 'Chat App',
       home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Chat App'),
+        appBar:AppBar(
+          title: Row(
+            children: [
+              IconButton(
+                icon: Icon(Icons.arrow_back),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ChatsScreen(OwnListConversation: Frame10().GetConverSation()),
+                    ),
+                  );
+                  // Xử lý sự kiện khi nhấn nút trở về
+                },
+              ),
+              Expanded(child: Container()), // Khoảng trống giữa IconButton và Text
+              Text(ServerManager().getNameRoom(widget.id_room) as String), // Văn bản 'Title' nằm bên phải
+            ],
+          ),
         ),
-        body: Column(
+
+        body:
+        Column(
           children: [
             Expanded(
               child: ListView.builder(

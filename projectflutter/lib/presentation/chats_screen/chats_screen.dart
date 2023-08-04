@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gap/gap.dart';
 import 'package:projectflutter/ServerManager.dart';
+import 'package:projectflutter/Views/Login.dart';
 import 'package:projectflutter/core/app_export.dart';
 import 'package:projectflutter/models/conversation.dart';
 import 'package:projectflutter/models/messages.dart';
@@ -11,8 +12,115 @@ import 'package:projectflutter/presentation/details/page.dart';
 import 'models/chat_model.dart';
 import 'widgets/chats_item_widget.dart';
 
-class ChatsScreen extends StatelessWidget {
-  const ChatsScreen({Key? key}) : super(key: key);
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
+
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
+class ChatsScreen extends StatefulWidget {
+  final List<Conversation> OwnListConversation;
+
+  const ChatsScreen({super.key, required this.OwnListConversation});
+  @override
+  _ChatsScreen createState() => _ChatsScreen();
+}
+
+class _ChatsScreen extends State<ChatsScreen> {
+
+  TextEditingController _nameRoom = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    //ServerManager().isOnChatScreen = true;
+    ServerManager().registerChatRoomReloadCallback(() { reloadChatRoomIfNeeded();});
+  }
+  // Hàm để cập nhật danh sách cuộc trò chuyện
+  void fetchAndSaveConversation() {
+    String newsql = "Select * from Conversation";
+    Frame10().InitRooms(newsql);
+    Future.delayed(Duration(seconds: 2), () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => ChatsScreen(OwnListConversation: Frame10().GetConverSation())
+        ),
+      );
+    });
+  }
+
+  void reloadChatRoomIfNeeded() {
+    Future.delayed(Duration(seconds: 2), () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => ChatsScreen(OwnListConversation: Frame10().GetConverSation())
+        ),
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    //ServerManager().isOnChatScreen = false; // Gỡ bỏ lắng nghe stream
+    super.dispose();
+  }
+    Future<int> CreateNewPublicConversation(String sqlStatement) async {
+      final url = Uri.parse('http://${ServerManager().IpAddress}:8080/updateConversation?sql=${Uri.encodeQueryComponent(sqlStatement)}');
+      //final Uri url = Uri.parse('$serverAddress');
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        //final List<dynamic> jsonList = json.decode(response.body);
+        fetchAndSaveConversation();
+
+      } else {
+        print('Lỗi khi gọi API: ${response.statusCode}');
+      }
+      return -1;
+    }
+
+  Future<void> _showNameInputDialog() async {
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Nhập tên phòng"),
+        content: TextField(
+          controller: _nameRoom,
+          decoration: InputDecoration(
+            hintText: "tên phòng",
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: Text("Hủy"),
+          ),
+          TextButton(
+            onPressed: () async {
+              String newUsername = _nameRoom.text.trim();
+              setState(() {
+                if (newUsername.isNotEmpty) {
+                  String sqlStatement = "INSERT INTO Conversation (conversation_name, user_id, IsPrivate) VALUES(N'${newUsername}', ${ServerManager().user?.id}, 0)";
+                  CreateNewPublicConversation(sqlStatement);
+                  // Update the username in ServerManager().user and UI
+                  Future.delayed(Duration(seconds: 1), () {
+                    Navigator.pop(context); // Close the input dialog
+                  });
+                }
+              });
+            },
+            child: Text("Xác nhận"),
+          ),
+        ],
+      ),
+    );
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -52,87 +160,27 @@ class ChatsScreen extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  SvgPicture.asset(
-                    ImageConstant.imgFrame242,
-                    fit: BoxFit.fill,
+                  TextButton.icon(
+                    onPressed: () {
+                      _showNameInputDialog();
+
+                    },
+                    icon: SvgPicture.asset(
+                      ImageConstant.imgIconplus,
+                      fit: BoxFit.contain,
+                      color: Colors.black,
+                    ),
+                    label: SizedBox.shrink(), // Ẩn label để chỉ hiển thị icon
+                    style: TextButton.styleFrom(
+                      primary: Colors.transparent, // Đặt màu chữ của nút là trong suốt
+                      padding: EdgeInsets.zero, // Xóa khoảng trống trong nút
+                      shape: CircleBorder(), // Đặt hình dạng nút là hình tròn
+                    ),
                   ),
                 ],
               ),
             ),
             const Gap(12),
-            SizedBox(
-              height: getVerticalSize(
-                40,
-              ),
-              child: TextFormField(
-                decoration: InputDecoration(
-                  hintText: 'Search by chats',
-                  hintStyle: TextStyle(
-                    fontSize: getFontSize(
-                      16.0,
-                    ),
-                    color: ColorConstant.bluegray400,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(
-                      getHorizontalSize(
-                        8,
-                      ),
-                    ),
-                    borderSide: BorderSide.none,
-                  ),
-                  prefixIcon: Padding(
-                    padding: EdgeInsets.only(
-                      left: getHorizontalSize(
-                        16,
-                      ),
-                      right: getHorizontalSize(
-                        10,
-                      ),
-                    ),
-                    child: SizedBox(
-                      height: getSize(
-                        20,
-                      ),
-                      width: getSize(
-                        20,
-                      ),
-                      child: SvgPicture.asset(
-                        ImageConstant.imgIconSearch,
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                  ),
-                  prefixIconConstraints: BoxConstraints(
-                    minWidth: getSize(
-                      20,
-                    ),
-                    minHeight: getSize(
-                      20,
-                    ),
-                  ),
-                  filled: true,
-                  fillColor: ColorConstant.whiteA700,
-                  isDense: true,
-                  contentPadding: EdgeInsets.only(
-                    top: getVerticalSize(
-                      11.375,
-                    ),
-                    bottom: getVerticalSize(
-                      11.375,
-                    ),
-                  ),
-                ),
-                style: TextStyle(
-                  color: ColorConstant.bluegray400,
-                  fontSize: getFontSize(
-                    16.0,
-                  ),
-                  fontFamily: 'General Sans',
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
             const Gap(15),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -161,12 +209,10 @@ class ChatsScreen extends StatelessWidget {
               padding: const EdgeInsets.only(top: 10, bottom: 10),
               physics: const NeverScrollableScrollPhysics(),
               shrinkWrap: true,
-              itemCount: ServerManager().conversation?.length,
+
+              itemCount: widget.OwnListConversation.length,
               itemBuilder: (context, index) {
-                List<Conversation>? ls = ServerManager().conversation;
-                User? us = ServerManager().user;
-                List<Messages>? ms = ServerManager().messages;
-                var temjson = ServerManager().conversation?[index].toJson();
+                var temjson = widget.OwnListConversation[index].toJson(); //ServerManager().conversation?[index].toJson();
                 final item = ChatModel.fromJson(temjson!); //ServerManager().conversation![index].toJson()
                 return ChatsItemWidget(item);
               },
@@ -221,3 +267,5 @@ class ChatsScreen extends StatelessWidget {
     );
   }
 }
+
+

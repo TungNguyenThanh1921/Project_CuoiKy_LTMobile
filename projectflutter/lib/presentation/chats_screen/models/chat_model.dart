@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:projectflutter/core/app_export.dart';
 
 class ChatModel {
@@ -13,7 +15,7 @@ class ChatModel {
   //  required this.groupMembers,
   });
 
-  final String image;
+  final Uint8List? image;
   final String title;
   // final bool pinned;
   // final bool muted;

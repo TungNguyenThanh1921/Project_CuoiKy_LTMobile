@@ -15,6 +15,8 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 import '../../ServerManager.dart';
+import '../../Views/Login.dart';
+import '../chats_screen/chats_screen.dart';
 class Profile extends StatefulWidget {
   @override
   _DetailsPage createState() => _DetailsPage();
@@ -135,12 +137,19 @@ class _DetailsPage extends State<Profile>{
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed:  (){ Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => ChatsScreen(OwnListConversation: Frame10().GetConverSation())
+            ),
+          );}
         ),
-        backgroundColor: Colors.transparent, // Make the app bar transparent
+        backgroundColor: Colors.blue, // Make the app bar transparent
         elevation: 0, // Remove the shadow from the app bar
         // You can also add other app bar settings like title, actions, etc. if needed.
       ),
+
+
       body: Stack(
         children: [
           Stack(

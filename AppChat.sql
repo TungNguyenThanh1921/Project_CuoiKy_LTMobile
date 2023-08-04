@@ -16,9 +16,11 @@ CREATE TABLE Conversation (
     conversation_id INT PRIMARY KEY IDENTITY(1,1),
     conversation_name VARCHAR(100),
     user_id INT,
+    participant_id INT, -- Thêm cột để lưu trữ thông tin người tham gia cuộc trò chuyện riêng tư
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     IsPrivate BIT NOT NULL DEFAULT 0, -- Thêm trường IsPrivate để xác định cuộc trò chuyện có riêng tư hay không
-    FOREIGN KEY (user_id) REFERENCES Users(user_id)
+    FOREIGN KEY (user_id) REFERENCES Users(user_id),
+    FOREIGN KEY (participant_id) REFERENCES Users(user_id) -- Thêm khóa ngoại để liên kết với bảng Users
 );
 
 CREATE TABLE Message  (
@@ -37,11 +39,11 @@ VALUES
     ('Trang', 'Trang123@email.com', 'abc456', NULL, '2023-07-28 11:30:00'),
     (N'Tài', 'TTTai@email.com', 'abc789', NULL, '2023-07-28 12:15:00');
 
-	INSERT INTO Conversation (conversation_name, user_id, created_at, IsPrivate)
+	INSERT INTO Conversation (conversation_name, user_id, participant_id, created_at, IsPrivate)
 VALUES
-    ('General Chat', 1, '2023-07-28 10:00:00', 0),
-    ('Private Chat 1', 2, '2023-07-28 11:30:00', 1),
-    ('Public Chat 1', 3, '2023-07-28 12:15:00', 0);
+    ('General Chat', 1, null, '2023-07-28 10:00:00', 0),
+    ('Private Chat 1', 2,1, '2023-07-28 11:30:00', 1),
+    ('Public Chat 1', 3, null,'2023-07-28 12:15:00', 0);
 
 	INSERT INTO Message (conversation_id, sender_user_id, content, img, sent_at)
 VALUES

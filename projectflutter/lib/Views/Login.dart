@@ -126,6 +126,28 @@ class Frame10 extends StatelessWidget {
 
   }
 
+  List<Conversation> GetConverSation()
+  {
+    List<Conversation> templist = [];
+    for (var data in ServerManager().conversation!)
+      {
+        if(data.is_private)
+          {
+            if(ServerManager().user?.id == data.user_id || ServerManager().user?.id == data.participant_id)
+              {
+                templist.add(data);
+              }
+          }
+        else
+          {
+            templist.add(data);
+          }
+      }
+    return templist;
+
+  }
+
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -204,7 +226,7 @@ class Frame10 extends StatelessWidget {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                        builder: (context) => ChatsScreen()
+                                        builder: (context) => ChatsScreen(OwnListConversation: GetConverSation())
                                     ),
                                   );
                         }
