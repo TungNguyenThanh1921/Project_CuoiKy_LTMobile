@@ -8,9 +8,9 @@ late final int id;
 late final String userName;
 late final String email;
 late final String password;
-late final Uint8List? image;
+Uint8List? image;
 
-User( {required this.id, required  this.userName, required  this.email, required  this.password, required  this.image});
+User( {required this.id, required  this.userName, required  this.email, required  this.password, this.image});
 
 factory User.fromJson(Map<String, dynamic> json) {
  return User(
