@@ -208,27 +208,36 @@ class _ChatAppState extends State<ChatApp> {
         print('Received unexpected data type: ${data.runtimeType}');
       }
   }
-  void sendMessage(String message, PickedFile? image) {
+  Future<void> sendMessage(String message, PickedFile? image) async {
     if (message.isEmpty && image == null) return;
     final data = {
+      'userId': ServerManager().user!.id,
       'type': 'text', // Hoặc 'image' nếu bạn muốn gửi tin nhắn hình ảnh
       'roomId': '${widget.id_room}',
       'content': message,
     };
-
     if (image != null) {
       final bytes = File(image.path).readAsBytesSync();
       data['type'] = 'image';
       data['content'] = base64Encode(bytes);
       ServerManager().channel?.sink.add(json.encode(data));
       final formattedMessage = Message(MessageType.image, base64Encode(bytes), senderName: clientName, timestamp: DateTime.now(), avatar: ServerManager().getAvatarUser(ServerManager().user!.id));
-      setState(() {
-        messages.add(formattedMessage);
-      });
-
-
-      String sql = "INSERT INTO Message (conversation_id, sender_user_id, content, img) VALUES (${widget.id_room}, ${ServerManager().user!.id}, NULL, ${base64Encode(bytes)})";
-      SaveMessageToDataBase(sql);
+      final response = await http.post(
+        Uri.parse('http://${ServerManager().IpAddress}:8080/updateImageMesseges'),
+        body: jsonEncode(data),
+        headers: {'Content-Type': 'application/json'},
+      );
+      if (response.statusCode == 200) {
+        // Avatar updated successfully, set the avatar for the user
+        setState(() {
+          messages.add(formattedMessage);
+        });
+      } else {
+        // Handle the case where avatar update failed
+        print('Error updating avatar: ${response.statusCode}');
+      }
+     String sql = "INSERT INTO Message (conversation_id, sender_user_id, content, img) VALUES (${widget.id_room}, ${ServerManager().user!.id}, NULL, ${base64Encode(bytes)})";
+      //SaveMessageToDataBase(sql);
     } else {
       final ms = json.encode(data);
       ServerManager().channel?.sink.add(ms);

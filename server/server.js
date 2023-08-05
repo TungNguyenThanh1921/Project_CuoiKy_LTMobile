@@ -57,7 +57,7 @@ app.use((req, res, next) => {
 });
 app.use(express.json({ limit: '10mb' })); // Set the limit to 10 megabytes or adjust as needed
 app.use(express.urlencoded({ limit: '10mb', extended: true })); // Set the limit to 10 megabytes or adjust as needed
-
+const mssql = require('mssql');
 // API endpoint to update user's avatar
 app.post('/updateAvatar', async (req, res) => {
   try {
@@ -75,6 +75,37 @@ app.post('/updateAvatar', async (req, res) => {
   } catch (error) {
     console.error('Error updating avatar:', error);
     res.status(500).json({ error: 'Error updating avatar' });
+  }
+});
+
+app.post('/updateImageMesseges', async (req, res) => {
+  try {
+    console.log('Request Body:', req.body);
+    const { userId, type, roomId, content } = req.body;
+
+    // Create a SQL query with named parameters
+    const sqlStatement = 'INSERT INTO Message (conversation_id, sender_user_id, content, img) VALUES (@roomId, @userId, NULL, @content)';
+    const pool = await mssql.connect({
+      user: 'sa',
+      password: 'sa',
+      server: 'VQ79J9P',
+      database: 'ChatApp',
+    });
+
+    // Define the named parameters
+    const request = pool.request();
+    request.input('roomId', mssql.Int, roomId);
+    request.input('userId', mssql.Int, userId);
+    request.input('content', mssql.VarChar, content);
+
+    // Execute the query
+    const result = await request.query(sqlStatement);
+
+    // Return a success response upon successful update
+    res.status(200).json({ message: 'Message inserted successfully' });
+  } catch (error) {
+    console.error('Error inserting message:', error);
+    res.status(500).json({ error: 'Error inserting message' });
   }
 });
 
