@@ -218,19 +218,23 @@ class Frame10 extends StatelessWidget {
                       InitMessage(sql_initMessage);
                       String sql_initUser = 'select user_id, username, email, password, avatar from Users';
                       InitListUser(sql_initUser);
-                      String sql = "select user_id, username, email, password, avatar from Users where email = '${emailController.text.trim()}' and password = '${passwordController.text.trim()}'";
-                      CheckLogin(sql).then((isLoggedIn) {
-                        if(isLoggedIn == true)
-                        {
+                      Future.delayed(Duration(seconds: 2), () {
+                        String sql = "select user_id, username, email, password, avatar from Users where email = '${emailController.text.trim()}' and password = '${passwordController.text.trim()}'";
+                        CheckLogin(sql).then((isLoggedIn) {
+                          if(isLoggedIn == true)
+                          {
 
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) => ChatsScreen(OwnListConversation: GetConverSation())
-                                    ),
-                                  );
-                        }
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => ChatsScreen(OwnListConversation: GetConverSation())
+                              ),
+                            );
+                          }
+                        });
                       });
+
+
                       // Thêm hành động khi người dùng nhấn nút vào đây
                     },
                     style: TextButton.styleFrom(

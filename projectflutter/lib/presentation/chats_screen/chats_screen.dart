@@ -9,6 +9,7 @@ import 'package:projectflutter/models/messages.dart';
 import 'package:projectflutter/models/user.dart';
 import 'package:projectflutter/presentation/details/page.dart';
 
+import '../../main.dart';
 import 'models/chat_model.dart';
 import 'widgets/chats_item_widget.dart';
 
@@ -134,14 +135,44 @@ class _ChatsScreen extends State<ChatsScreen> {
           TextButton(
             onPressed: () async {
               setState(() {
+                String sqlStatement = "INSERT INTO Conversation (conversation_name, user_id, participant_id, IsPrivate) VALUES(N'private', ${ServerManager().user?.id}, ${id_participation},1)";
+                CreateNewConversation(sqlStatement);
+                // Update the username in ServerManager().user and UI
+                Future.delayed(Duration(seconds: 1), () {
+                  Navigator.pop(context); // Close the input dialog
+                });
 
-                  String sqlStatement = "INSERT INTO Conversation (conversation_name, user_id, participant_id, IsPrivate) VALUES(N'private', ${ServerManager().user?.id}, ${id_participation},1)";
-                  CreateNewConversation(sqlStatement);
-                  // Update the username in ServerManager().user and UI
-                  Future.delayed(Duration(seconds: 1), () {
-                    Navigator.pop(context); // Close the input dialog
-                  });
-
+              });
+            },
+            child: Text("Xác nhận"),
+          ),
+        ],
+      ),
+    );
+  }
+  Future<void> HasInitPrivateConversation(int id_room, String name_participation) async {
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Cuộc trò truyện với ${name_participation} đã tồn tại rồi"),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: Text("Hủy"),
+          ),
+          TextButton(
+            onPressed: () async {
+              setState(() {
+                String sqlupdate = 'select * from Message';
+                Frame10().InitMessage(sqlupdate);
+                Future.delayed(Duration(seconds: 1), () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => ChatApp(id_room: id_room,)));
+                });
               });
             },
             child: Text("Xác nhận"),
@@ -152,7 +183,7 @@ class _ChatsScreen extends State<ChatsScreen> {
   }
 
   Future<void> showClients() async {
-    await showDialog(
+    final selectedClient = await showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text("Chọn người trò truyện"),
@@ -163,12 +194,50 @@ class _ChatsScreen extends State<ChatsScreen> {
             itemBuilder: (context, index) {
               User? client = ServerManager().list_user?[index];
               return ListTile(
-                leading: Icon(client?.image as IconData?),
+                leading: Image.memory((ServerManager().getAvatarUser(client!.id) == null ? ServerManager().img_default : ServerManager().getAvatarUser(client!.id)) as Uint8List),
                 title: Text(client!.userName),
                 trailing: ElevatedButton(
                   onPressed: () {
-                    Navigator.pop(context);
-                    InitPrivateConversation(client.id, client.userName);
+
+                    Frame10().InitRooms('select * from Conversation');
+
+                    Future.delayed(Duration(seconds: 2), () {
+                      for(var i in ServerManager().conversation!)
+                      {
+                        if(i.is_private == true)
+                          {
+                            if(i.user_id == ServerManager().user?.id)
+                            {
+                              if(i.participant_id == client.id)
+                              {
+                                HasInitPrivateConversation(i.id, client.userName);
+
+                              }
+                              else
+                              {
+                                InitPrivateConversation(client.id, client.userName);
+                              }
+                            }
+                            else if(i.participant_id == ServerManager().user?.id)
+                            {
+                              if(i.user_id == client.id)
+                              {
+                                HasInitPrivateConversation(i.id, client.userName);
+
+
+
+                              }
+                              else
+                              {
+                                InitPrivateConversation(client.id, client.userName);
+                              }
+                            }
+                          }
+
+                      }
+                    });
+
+                    Navigator.of(context).pop();
                      // Đóng dialog
                   },
                   child: Text("Chat"),

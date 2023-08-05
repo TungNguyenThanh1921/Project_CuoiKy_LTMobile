@@ -22,8 +22,8 @@ class Messages {
       id: json['message_id'] as int,
       conversation_id: json['conversation_id'] as int,
       sender_id: json['sender_user_id'] as int,
-      content: json['content'] as String,
-      image: json['avatar'] != null ? base64Decode(json['avatar']) : null,
+      content:(json['content'] != null ? json['content'] : '') as String,
+      image: json['img'] != null ? Uint8List.fromList(base64.decode(json['img'])) : null,
       sent_at: json['sent_at'] != null ? DateTime.parse(json['sent_at']) : DateTime.now(),
     );
   }

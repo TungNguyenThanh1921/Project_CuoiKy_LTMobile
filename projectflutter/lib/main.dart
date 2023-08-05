@@ -106,6 +106,7 @@ class _ChatAppState extends State<ChatApp> {
   void InitMessageInRoom()  {
       //intit own client name
       clientName = ServerManager().user!.userName;
+      List<Messages> mss = List.from( ServerManager().messages!);
       if(ServerManager().messages!.length > 0)
         {
           List<Message> list_message_inroom = [];
@@ -115,13 +116,13 @@ class _ChatAppState extends State<ChatApp> {
               {
                 Message temp;
                 String? name = ServerManager().getNameUser(data.sender_id);
-                if(data.content != null)
+                if(data.content != null && data.content.isNotEmpty)
                   {
-                    temp = Message(MessageType.text, data.content, senderName: name!, timestamp: data.sent_at!,avatar: ServerManager().getAvatarUser(data.sender_id));
+                    temp = Message(MessageType.text, data.content, null, senderName: name!, timestamp: data.sent_at!,avatar: ServerManager().getAvatarUser(data.sender_id));
                   }
                 else
                   {
-                    temp = Message(MessageType.image, data.image as String, senderName: name!, timestamp: data.sent_at!, avatar: ServerManager().getAvatarUser(data.sender_id));
+                    temp = Message(MessageType.image, null, data.image ,senderName: name!, timestamp: data.sent_at!, avatar: ServerManager().getAvatarUser(data.sender_id));
                   }
 
                 list_message_inroom.add(temp);
@@ -147,28 +148,28 @@ class _ChatAppState extends State<ChatApp> {
   }
   void _onChatRoomReload(dynamic data) {
       if (data is List<int>) {
-        final prefix = utf8.decode(data.sublist(0, 5));
-        final content = data.sublist(5);
-
-        if (prefix == 'text ') {
-          final textMessage = utf8.decode(content);
-          final message = Message(MessageType.text, textMessage, senderName: 'Receiver', timestamp: DateTime.now(), avatar: ServerManager().getAvatarUser(ServerManager().user!.id));
-          setState(() {
-            messages.add(message);
-          });
-        } else if (prefix == 'image') {
-          final message = Message(MessageType.image, base64Encode(content), senderName: 'Receiver', timestamp: DateTime.now(), avatar: ServerManager().getAvatarUser(ServerManager().user!.id));
-          setState(() {
-            messages.add(message);
-          });
-        } else {
-          print('Received unexpected data format: $prefix');
-        }
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        );
+        // final prefix = utf8.decode(data.sublist(0, 5));
+        // final content = data.sublist(5);
+        //
+        // if (prefix == 'text ') {
+        //   final textMessage = utf8.decode(content);
+        //   final message = Message(MessageType.text, textMessage, senderName: 'Receiver', timestamp: DateTime.now(), avatar: ServerManager().getAvatarUser(ServerManager().user!.id));
+        //   setState(() {
+        //     messages.add(message);
+        //   });
+        // } else if (prefix == 'image') {
+        //   final message = Message(MessageType.image, base64Encode(content), senderName: 'Receiver', timestamp: DateTime.now(), avatar: ServerManager().getAvatarUser(ServerManager().user!.id));
+        //   setState(() {
+        //     messages.add(message);
+        //   });
+        // } else {
+        //   print('Received unexpected data format: $prefix');
+        // }
+        // _scrollController.animateTo(
+        //   _scrollController.position.maxScrollExtent,
+        //   duration: Duration(milliseconds: 300),
+        //   curve: Curves.easeInOut,
+        // );
       }  else if (data is String) {
         // Xử lý dữ liệu nhận được từ server là JSON
         try {
@@ -181,12 +182,12 @@ class _ChatAppState extends State<ChatApp> {
           if (roomId == widget.id_room.toString()) {
             // Xử lý tin nhắn ở đây, ví dụ:
             if (type == 'text') {
-              final message = Message(MessageType.text, content, senderName: 'Receiver', timestamp: DateTime.now(), avatar: ServerManager().getAvatarUser(ServerManager().user!.id));
+              final message = Message(MessageType.text, content,null, senderName: 'Receiver', timestamp: DateTime.now(), avatar: ServerManager().getAvatarUser(ServerManager().user!.id));
               setState(() {
                 messages.add(message);
               });
             } else if (type == 'image') {
-              final message = Message(MessageType.image, content, senderName: 'Receiver', timestamp: DateTime.now(), avatar: ServerManager().getAvatarUser(ServerManager().user!.id));
+              final message = Message(MessageType.image, null,Uint8List.fromList(base64.decode(content)), senderName: 'Receiver', timestamp: DateTime.now(), avatar: ServerManager().getAvatarUser(ServerManager().user!.id));
               setState(() {
                 messages.add(message);
               });
@@ -221,7 +222,7 @@ class _ChatAppState extends State<ChatApp> {
       data['type'] = 'image';
       data['content'] = base64Encode(bytes);
       ServerManager().channel?.sink.add(json.encode(data));
-      final formattedMessage = Message(MessageType.image, base64Encode(bytes), senderName: clientName, timestamp: DateTime.now(), avatar: ServerManager().getAvatarUser(ServerManager().user!.id));
+      final formattedMessage = Message(MessageType.image, null, bytes, senderName: clientName, timestamp: DateTime.now(), avatar: ServerManager().getAvatarUser(ServerManager().user!.id));
       final response = await http.post(
         Uri.parse('http://${ServerManager().IpAddress}:8080/updateImageMesseges'),
         body: jsonEncode(data),
@@ -241,7 +242,7 @@ class _ChatAppState extends State<ChatApp> {
     } else {
       final ms = json.encode(data);
       ServerManager().channel?.sink.add(ms);
-      final formattedMessage = Message(MessageType.text, message, senderName: clientName, timestamp: DateTime.now(), avatar: ServerManager().getAvatarUser(ServerManager().user!.id));
+      final formattedMessage = Message(MessageType.text, message,null ,senderName: clientName, timestamp: DateTime.now(), avatar: ServerManager().getAvatarUser(ServerManager().user!.id));
       setState(() {
         messages.add(formattedMessage);
       });
@@ -306,9 +307,9 @@ class _ChatAppState extends State<ChatApp> {
     );
 
     if (message.type == MessageType.image) {
-      final imageBytes = base64Decode(message.content);
+      final imageBytes = message.image;
       return GestureDetector(
-        onTap: () => _onImageTap(context, message.content), // Pass the base64 image to the function
+        onTap: () => _onImageTap(context, base64Encode(message.image as List<int>) ), // Pass the base64 image to the function
         child: Container(
           alignment: isSent ? Alignment.centerRight : Alignment.centerLeft,
           child: Row(
@@ -332,7 +333,7 @@ class _ChatAppState extends State<ChatApp> {
                 child: Column(
                   crossAxisAlignment: align,
                   children: [
-                    Image.memory(imageBytes, height: 150, width: 150),
+                    Image.memory(imageBytes as Uint8List, height: 150, width: 150),
                     SizedBox(height: 4),
                     Text(
                       _formatTimestamp(message.timestamp),
@@ -379,7 +380,7 @@ class _ChatAppState extends State<ChatApp> {
                   crossAxisAlignment: align,
                   children: [
                     Text(
-                      message.content,
+                      message.content as String,
                       style: TextStyle(fontSize: 16, color: Colors.black),
                       textAlign: align == CrossAxisAlignment.end ? TextAlign.end : TextAlign.start,
                     ),
@@ -554,9 +555,10 @@ enum MessageType {
 
 class Message {
   MessageType type;
-  String content;
+  String? content;
+  Uint8List? image;
   String senderName;
   DateTime timestamp;
   Uint8List? avatar;
-  Message(this.type, this.content, {required this.senderName, required this.timestamp, required this.avatar});
+  Message(this.type, this.content, this.image,{required this.senderName, required this.timestamp, required this.avatar});
 }

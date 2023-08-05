@@ -2,28 +2,40 @@
 const WebSocket = require('ws');
 const wss = new WebSocket.Server({ port: 9090 });
 
+
+function broadcastUpdateConversation() {
+  wss.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send('update-conversation');
+    }
+  });
+}
+
+
+
 wss.on('connection', (ws) => {
   console.log('A client connected.');
 
   ws.on('message', (message) => {
     console.log('New message received:', message);
 
-    if (message instanceof Uint8Array) {
-      // Broadcast image data to all other clients
-      wss.clients.forEach((client) => {
-        if (client !== ws && client.readyState === WebSocket.OPEN) {
-          client.send(message);
-        }
-      });
-    } else if (typeof message === 'string') {
-      // Broadcast text message to all other clients
-      wss.clients.forEach((client) => {
-        if (client !== ws && client.readyState === WebSocket.OPEN) {
-          client.send(message);
-        }
-      });
-    } else {
-      console.log('Received unexpected data format.');
+      try {
+      const data = JSON.parse(message);
+      const roomId = data.roomId;
+      const type = data.type;
+      const content = data.content;
+      console.log(roomId);
+      console.log(type);
+      console.log(content);
+
+wss.clients.forEach((client) => {
+    if (client !== ws && client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify(data));
+    }
+  });
+
+    } catch (error) {
+      console.error('Error parsing JSON:', error);
     }
   });
 
@@ -88,7 +100,7 @@ app.post('/updateImageMesseges', async (req, res) => {
     const pool = await mssql.connect({
       user: 'sa',
       password: 'sa',
-      server: 'VQ79J9P',
+      server: 'MSI',
       database: 'ChatApp',
     });
 
@@ -126,6 +138,23 @@ app.get('/data', async (req, res) => {
     console.error('Error fetching data:', error);
     res.status(500).json({ error: 'Error fetching data' });
     console.log('loi gui api');
+  }
+});
+
+app.get('/updateConversation', async (req, res) => {
+  try {
+    // Trích xuất câu lệnh SQL từ tham số 'sql' trong URL
+    const sqlStatement = req.query.sql;
+
+    // Thực thi câu lệnh SQL để lấy dữ liệu từ cơ sở dữ liệu
+    const result = await queryDB(sqlStatement);
+
+    // Gửi dữ liệu trả về cho client dưới dạng JSON
+    res.json(result);
+	  broadcastUpdateConversation();
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    res.status(500).json({ error: 'Error fetching data' });
   }
 });
 

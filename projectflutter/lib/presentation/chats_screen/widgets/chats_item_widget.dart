@@ -153,11 +153,10 @@ class ChatsItemWidget extends StatelessWidget {
                   onTap: () {
                     String sqlupdate = 'select * from Message';
                     Frame10().InitMessage(sqlupdate);
-                    Future.delayed(Duration(seconds: 1), () {
+                    Future.delayed(Duration(seconds: 2), () {
                       Navigator.push(
                           context,
                           MaterialPageRoute(
-
                               builder: (_) => ChatApp(id_room: item.id_room,)));
                     });
                   },

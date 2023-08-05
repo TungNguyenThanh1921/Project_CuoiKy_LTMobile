@@ -34,7 +34,7 @@ class Conversation {
   }
 
   Map<String, dynamic> toJson(){ return{
-  "image": is_private == true ? ServerManager().getAvatarUser(participant_id) : ServerManager().img_default,
+  "image": is_private == true ? (ServerManager().getAvatarUser(participant_id) != null ?   ServerManager().getAvatarUser(participant_id) :  ServerManager().img_default) : ServerManager().img_default,
   "title": is_private == true ? (user_id == ServerManager().user?.id ? ServerManager().getNameUser(participant_id)  : ServerManager().getNameUser(user_id) ): name,
 
   "name":'you: ${ServerManager().user?.userName}',
