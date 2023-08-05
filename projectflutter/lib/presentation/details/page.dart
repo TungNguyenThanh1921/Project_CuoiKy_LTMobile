@@ -13,65 +13,111 @@ import 'package:projectflutter/presentation/details/widgets/action.dart';
 import 'package:projectflutter/presentation/details/widgets/category.dart';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:web_socket_channel/io.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../../ServerManager.dart';
 import '../../Views/Login.dart';
 import '../chats_screen/chats_screen.dart';
+
 class Profile extends StatefulWidget {
   @override
   _DetailsPage createState() => _DetailsPage();
 }
 
-class _DetailsPage extends State<Profile>{
+class _DetailsPage extends State<Profile> {
   TextEditingController _nameController = TextEditingController();
+  // WebSocket channel
+  WebSocketChannel? channel;
 
-  Future<void> updateUserName(String sqlStatement) async {
-      final url = Uri.parse('http://${ServerManager().IpAddress}:8080/GetData?sql=${Uri.encodeQueryComponent(sqlStatement)}');
-      final response = await http.get(url);
-
-      if (response.statusCode == 200) {
-
-      } else {
-        print('Error calling API: ${response.statusCode}');
-
-      }
-
+  @override
+  void initState() {
+    // Connect to the WebSocket server (replace 'your_server_ip' with your server's IP address)
+    channel = IOWebSocketChannel.connect('ws://${ServerManager().IpAddress}:9090');
+    super.initState();
   }
+
+  @override
+  void dispose() {
+    // Close the WebSocket connection when the screen is disposed
+    channel?.sink.close();
+    super.dispose();
+  }
+
   Future<void> _pickImageFromGallery() async {
     final pickedFile = await ImagePicker().getImage(source: ImageSource.gallery);
 
     if (pickedFile != null) {
-      // Get the image file and convert it to bytes (Uint8List)
       File imageFile = File(pickedFile.path);
       Uint8List imageBytes = await imageFile.readAsBytes();
 
-      // Call the method to update the avatar on the server
       if (imageBytes != null) {
-        await updateAvatar(imageBytes);
+        // Convert the image bytes to a base64-encoded string
+        String base64Image = base64Encode(imageBytes);
 
-        // Update the UI with the new avatar after successful update on the server
-        setState(() {
-          ServerManager().user?.image = imageBytes;
-        });
+        // Create a JSON object containing the email and base64-encoded image data
+        Map<String, dynamic> data = {
+          'email': ServerManager().user?.email ?? '', // Replace with the user's email
+          'avatar': base64Image,
+        };
+
+        print('Request Body JSON: $data'); // Print the JSON data
+
+// Make the API call to update the avatar
+        final response = await http.post(
+          Uri.parse('http://${ServerManager().IpAddress}:8080/updateAvatar'),
+          body: jsonEncode(data),
+          headers: {'Content-Type': 'application/json'},
+        );
+
+        if (response.statusCode == 200) {
+          // Avatar updated successfully, set the avatar for the user
+          setState(() {
+            ServerManager().user?.image = imageBytes;
+          });
+        } else {
+          // Handle the case where avatar update failed
+          print('Error updating avatar: ${response.statusCode}');
+        }
       }
     }
   }
 
+  Future<void> updateAvatar(String base64Image) async {
+    String email = ServerManager().user?.email ?? ''; // Replace with the user's email
 
-  Future<void> updateAvatar(Uint8List imageBytes) async {
-    String base64Image = base64Encode(imageBytes);
-    String sqlStatement =
-        "UPDATE Users SET avatar = '$base64Image' WHERE email = '${ServerManager().user?.email}'";
+    // Create a JSON object containing the email and base64-encoded image data
+    Map<String, dynamic> data = {
+      'email': email,
+      'avatar': base64Image,
+    };
 
-    final url = Uri.parse('http://${ServerManager().IpAddress}:8080/GetData?sql=${Uri.encodeQueryComponent(sqlStatement)}');
-    final response = await http.get(url);
+    final url = Uri.parse('http://${ServerManager().IpAddress}:8080/updateAvatar');
+    final response = await http.post(url, body: jsonEncode(data), headers: {
+      'Content-Type': 'application/json',
+    });
 
     if (response.statusCode == 200) {
-      // Avatar updated successfully
+      print('Call API successfully');
+
     } else {
       print('Error calling API: ${response.statusCode}');
     }
   }
+
+  Future<void> updateUserName(String sqlStatement) async {
+    final url = Uri.parse(
+        'http://${ServerManager().IpAddress}:8080/GetData?sql=${Uri.encodeQueryComponent(sqlStatement)}');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      // Username updated successfully
+    } else {
+      print('Error calling API: ${response.statusCode}');
+    }
+  }
+
 
   Future<void> _showNameInputDialog() async {
     await showDialog(
@@ -100,7 +146,13 @@ class _DetailsPage extends State<Profile>{
                       "UPDATE Users SET username = '$newUsername' WHERE email = '${ServerManager().user?.email}'";
                   updateUserName(sqlStatement);
                   // Update the username in ServerManager().user and UI
-                  User userTemp = User(id: ServerManager().user!.id, userName: newUsername, email: ServerManager().user!.email, password: ServerManager().user!.password, image: ServerManager().user!.image);
+                  User userTemp = User(
+                    id: ServerManager().user!.id,
+                    userName: newUsername,
+                    email: ServerManager().user!.email,
+                    password: ServerManager().user!.password,
+                    image: ServerManager().user!.image,
+                  );
                   ServerManager().InitUser(userTemp);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -118,38 +170,35 @@ class _DetailsPage extends State<Profile>{
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
-
     Uint8List? userImage = ServerManager().user?.image;
     //getImageBytesFromAssets('assets/images/default_image.jpg');
     Uint8List? imagepath = ServerManager().img_default;
-    if(userImage != null )
-    {
-      imagepath = userImage;// 'data:image/jpeg;base64,${base64Encode(userImage)}' as Uint8List?;
+    if (userImage != null) {
+      imagepath =
+          userImage; // 'data:image/jpeg;base64,${base64Encode(userImage)}' as Uint8List?;
     }
-    if(imagepath == null)
-      {
-        Container();
-      }
+    if (imagepath == null) {
+      Container();
+    }
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed:  (){ Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) => ChatsScreen(OwnListConversation: Frame10().GetConverSation())
-            ),
-          );}
-        ),
+            icon: Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      ChatsScreen(OwnListConversation: Frame10().GetConverSation()),
+                ),
+              );
+            }),
         backgroundColor: Colors.blue, // Make the app bar transparent
         elevation: 0, // Remove the shadow from the app bar
         // You can also add other app bar settings like title, actions, etc. if needed.
       ),
-
-
       body: Stack(
         children: [
           Stack(
@@ -207,43 +256,46 @@ class _DetailsPage extends State<Profile>{
           Align(
             alignment: Alignment.bottomCenter,
             child: SizedBox(
-              height: getSize(
-                500,
-              ),
+              height: getSize(500),
               child: Card(
                 clipBehavior: Clip.antiAlias,
                 elevation: 0,
                 margin: const EdgeInsets.symmetric(),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(
-                  getHorizontalSize(16),
-                ))),
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(
+                      getHorizontalSize(16),
+                    ),
+                  ),
+                ),
                 child: Column(
                   children: [
                     Padding(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 15, vertical: 15),
+                        horizontal: 15,
+                        vertical: 15,
+                      ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                        GestureDetector(
-                        onTap: _showNameInputDialog,
-                        child: Text(
-                          ServerManager().user!.userName,// Ten user
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.left,
-                            style: TextStyle(
-                              color: ColorConstant.gray900,
-                              fontSize: getFontSize(
-                                32,
+                          GestureDetector(
+                            onTap: _showNameInputDialog,
+                            child: Text(
+                              ServerManager().user!.userName, // Ten user
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.left,
+                              style: TextStyle(
+                                color: ColorConstant.gray900,
+                                fontSize: getFontSize(
+                                  32,
+                                ),
+                                fontFamily: 'General Sans',
+                                fontWeight: FontWeight.w600,
                               ),
-                              fontFamily: 'General Sans',
-                              fontWeight: FontWeight.w600,
                             ),
-                          )),
+                          ),
                           const Gap(8),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.start,
@@ -350,23 +402,26 @@ class _DetailsPage extends State<Profile>{
                       padding: const EdgeInsets.only(left: 0),
                       scrollDirection: Axis.horizontal,
                       child: Row(
-                          children: [
-                        {'animal': '🐈', 'text': 'Yêu mèo'},
-                        {'animal': '🌿', 'text': 'Thích cây'},
-                        {'animal': '👾', 'text': 'hehe'}
-                      ].map<Widget>((e) => Category(e)).toList()),
+                        children: [
+                          {'animal': '🐈', 'text': 'Yêu mèo'},
+                          {'animal': '🌿', 'text': 'Thích cây'},
+                          {'animal': '👾', 'text': 'hehe'}
+                        ].map<Widget>((e) => Category(e)).toList(),
+                      ),
                     ),
                     const Gap(15),
                     Expanded(
                       child: Container(
                         decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                                begin: Alignment.centerLeft,
-                                end: Alignment.centerRight,
-                                colors: [
+                          gradient: LinearGradient(
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                            colors: [
                               ColorConstant.fromHex('#ECE9FF'),
                               Colors.grey.shade100
-                            ])),
+                            ],
+                          ),
+                        ),
                         child: const ActionList(),
                       ),
                     ),

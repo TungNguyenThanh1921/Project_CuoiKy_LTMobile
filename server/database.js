@@ -3,8 +3,9 @@ const sql = require('mssql');
 const config = {
   user: 'sa',
   password: 'sa',
-  server: 'MSI',
-  database: 'SanPham',
+  server: 'DESKTOP-VQ79J9P',
+  database: 'ChatApp',
+  connectionLimit: 10,
   options: {
     enableArithAbort: true,
     encrypt: false,
