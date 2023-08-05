@@ -66,7 +66,7 @@ class _ChatsScreen extends State<ChatsScreen> {
     //ServerManager().isOnChatScreen = false; // Gỡ bỏ lắng nghe stream
     super.dispose();
   }
-    Future<int> CreateNewPublicConversation(String sqlStatement) async {
+    Future<int> CreateNewConversation(String sqlStatement) async {
       final url = Uri.parse('http://${ServerManager().IpAddress}:8080/updateConversation?sql=${Uri.encodeQueryComponent(sqlStatement)}');
       //final Uri url = Uri.parse('$serverAddress');
       final response = await http.get(url);
@@ -81,7 +81,7 @@ class _ChatsScreen extends State<ChatsScreen> {
       return -1;
     }
 
-  Future<void> _showNameInputDialog() async {
+  Future<void> InitPublicConversation() async {
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -105,7 +105,7 @@ class _ChatsScreen extends State<ChatsScreen> {
               setState(() {
                 if (newUsername.isNotEmpty) {
                   String sqlStatement = "INSERT INTO Conversation (conversation_name, user_id, IsPrivate) VALUES(N'${newUsername}', ${ServerManager().user?.id}, 0)";
-                  CreateNewPublicConversation(sqlStatement);
+                  CreateNewConversation(sqlStatement);
                   // Update the username in ServerManager().user and UI
                   Future.delayed(Duration(seconds: 1), () {
                     Navigator.pop(context); // Close the input dialog
@@ -114,6 +114,75 @@ class _ChatsScreen extends State<ChatsScreen> {
               });
             },
             child: Text("Xác nhận"),
+          ),
+        ],
+      ),
+    );
+  }
+  Future<void> InitPrivateConversation(int id_participation, String name_participation) async {
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Tạo cuộc trò truyện với ${name_participation}"),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: Text("Hủy"),
+          ),
+          TextButton(
+            onPressed: () async {
+              setState(() {
+
+                  String sqlStatement = "INSERT INTO Conversation (conversation_name, user_id, participant_id, IsPrivate) VALUES(N'private', ${ServerManager().user?.id}, ${id_participation},1)";
+                  CreateNewConversation(sqlStatement);
+                  // Update the username in ServerManager().user and UI
+                  Future.delayed(Duration(seconds: 1), () {
+                    Navigator.pop(context); // Close the input dialog
+                  });
+
+              });
+            },
+            child: Text("Xác nhận"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> showClients() async {
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Chọn người trò truyện"),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            itemCount: ServerManager().list_user?.length,
+            itemBuilder: (context, index) {
+              User? client = ServerManager().list_user?[index];
+              return ListTile(
+                leading: Icon(client?.image as IconData?),
+                title: Text(client!.userName),
+                trailing: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    InitPrivateConversation(client.id, client.userName);
+                     // Đóng dialog
+                  },
+                  child: Text("Chat"),
+                ),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: Text("Cancel"),
           ),
         ],
       ),
@@ -160,9 +229,15 @@ class _ChatsScreen extends State<ChatsScreen> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
+                  IconButton(
+                    icon: Image.asset('assets/images/multiPeople.png'),
+                    onPressed: () {
+                      showClients();
+                    },
+                  ),
                   TextButton.icon(
                     onPressed: () {
-                      _showNameInputDialog();
+                      InitPublicConversation();
 
                     },
                     icon: SvgPicture.asset(
@@ -245,21 +320,20 @@ class _ChatsScreen extends State<ChatsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 mainAxisSize: MainAxisSize.max,
                 children: [
-                  Icon(Icons.home), // Ví dụ, thay thế bằng Icon hoặc widget khác tương tự
-                  Icon(Icons.settings), // Ví dụ, thay thế bằng Icon hoặc widget khác tương tự
-                  Icon(Icons.notifications), // Ví dụ, thay thế bằng Icon hoặc widget khác tương tự
-                  GestureDetector(
-                    onTap: () {
+
+                  IconButton(
+                    icon: SvgPicture.asset(ImageConstant.imgIcon3, color: Colors.black,),
+                    onPressed: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (_) => Profile()),
                       );
                     },
-                    child: Icon(Icons.details), // Ví dụ, thay thế bằng Icon hoặc widget khác tương tự
                   ),
 
             ],
           ),
+
         ),
       ),
     ),

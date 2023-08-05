@@ -93,6 +93,7 @@ class ServerManager
         //fetchAndSaveConversation();
         String newsql = "Select * from Conversation";
         Frame10().InitRooms(newsql);
+
         onChatRoomReload?.call();
 
         // if(isOnChatScreen)

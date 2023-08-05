@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gap/gap.dart';
+import 'package:projectflutter/Views/Login.dart';
 import 'package:projectflutter/core/app_export.dart';
 import 'package:projectflutter/main.dart';
 import 'package:projectflutter/presentation/chat_inner_screen/chat_inner_screen.dart';
@@ -73,29 +74,7 @@ class ChatsItemWidget extends StatelessWidget {
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        // Padding(
-                        //   padding: EdgeInsets.only(
-                        //     left: getHorizontalSize(
-                        //       4,
-                        //     ),
-                        //   ),
-                        //   child: SizedBox(
-                        //     height: getSize(
-                        //       16,
-                        //     ),
-                        //     width: getSize(
-                        //       16,
-                        //     ),
-                        //     child: item.pinned == false && item.muted == false
-                        //         ? const SizedBox()
-                        //         : SvgPicture.asset(
-                        //             item.pinned == true
-                        //                 ? ImageConstant.imgIconpin
-                        //                 : ImageConstant.imgIconsoundoff1,
-                        //             fit: BoxFit.fill,
-                        //           ),
-                        //   ),
-                        // ),
+
                       ],
                     ),
                     Container(
@@ -134,19 +113,7 @@ class ChatsItemWidget extends StatelessWidget {
                                   ),
                                 ),
                               ),
-                              // Text(
-                              //   item.lastMessage,
-                              //   overflow: TextOverflow.ellipsis,
-                              //   textAlign: TextAlign.left,
-                              //   style: TextStyle(
-                              //     color: ColorConstant.bluegray400,
-                              //     fontSize: getFontSize(
-                              //       14,
-                              //     ),
-                              //     fontFamily: 'General Sans',
-                              //     fontWeight: FontWeight.w400,
-                              //   ),
-                              // ),
+
                             ],
                           ),
                         ],
@@ -170,47 +137,7 @@ class ChatsItemWidget extends StatelessWidget {
                         fontWeight: FontWeight.w400,
                       ),
                     ),
-                    // Padding(
-                    //   padding: EdgeInsets.only(
-                    //     top: getVerticalSize(
-                    //       17,
-                    //     ),
-                    //     bottom: getVerticalSize(
-                    //       1,
-                    //     ),
-                    //   ),
-                    //   child: Container(
-                    //     alignment: Alignment.center,
-                    //     height: getSize(
-                    //       20,
-                    //     ),
-                    //     width: getSize(
-                    //       20,
-                    //     ),
-                    //     decoration: BoxDecoration(
-                    //       // Màu nền của Container - màu xanh nếu 'item.archived' là false, ngược lại giữ nguyên màu cũ
-                    //       color: item.archived == false
-                    //           ? Colors.blue // Nếu 'item.archived' là false, sử dụng màu xanh
-                    //           : item.archived == true ? ColorConstant.bluegray100 : null,
-                    //       borderRadius: BorderRadius.circular(
-                    //         getHorizontalSize(20),
-                    //       ),
-                    //     ),
-                    //     child: Text(
-                    //       item.unread.toString(),
-                    //       textAlign: TextAlign.right,
-                    //       style: TextStyle(
-                    //         //color: ColorConstant.whiteA700,
-                    //         color: Colors.white,
-                    //         fontSize: getFontSize(
-                    //           14,
-                    //         ),
-                    //         fontFamily: 'General Sans',
-                    //         fontWeight: FontWeight.w500,
-                    //       ),
-                    //     ),
-                    //   ),
-                    // ),
+
                   ],
                 ),
               ],
@@ -219,32 +146,23 @@ class ChatsItemWidget extends StatelessWidget {
             Row(
               mainAxisSize: MainAxisSize.max,
               children: [
-                // StackedWidgets(
-                //   direction: TextDirection.rtl,
-                //   items: item.groupMembers,
-                // ),
-                // const Gap(8),
-                // Text(
-                //   "+ ${item.membersCount}",
-                //   overflow: TextOverflow.ellipsis,
-                //   textAlign: TextAlign.left,
-                //   style: TextStyle(
-                //     //color: ColorConstant.bluegray400,
-                //     color: Colors.black,
-                //     fontSize: getFontSize(
-                //       12,
-                //     ),
-                //     fontFamily: 'General Sans',
-                //     fontWeight: FontWeight.w500,
-                //   ),
-                // ),
+
                 const Spacer(),
                 //nut Join
                 InkWell(
-                  onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => ChatApp(id_room: item.id_room,))),
+                  onTap: () {
+                    String sqlupdate = 'select * from Message';
+                    Frame10().InitMessage(sqlupdate);
+                    Future.delayed(Duration(seconds: 1), () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+
+                              builder: (_) => ChatApp(id_room: item.id_room,)));
+                    });
+                  },
+
+
                   child: Container(
                     alignment: Alignment.center,
                     padding: EdgeInsets.only(
