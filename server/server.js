@@ -2,16 +2,13 @@
 const WebSocket = require('ws');
 const wss = new WebSocket.Server({ port: 9090 });
 
-
-function broadcastUpdateConversation() {
+function broadcastUpdateConversation(data) {
   wss.clients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {
-      client.send('update-conversation');
+      client.send(JSON.stringify(data));
     }
   });
 }
-
-
 
 wss.on('connection', (ws) => {
   console.log('A client connected.');
@@ -19,7 +16,7 @@ wss.on('connection', (ws) => {
   ws.on('message', (message) => {
     console.log('New message received:', message);
 
-      try {
+    try {
       const data = JSON.parse(message);
       const roomId = data.roomId;
       const type = data.type;
@@ -28,11 +25,11 @@ wss.on('connection', (ws) => {
       console.log(type);
       console.log(content);
 
-wss.clients.forEach((client) => {
-    if (client !== ws && client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify(data));
-    }
-  });
+      wss.clients.forEach((client) => {
+        if (client !== ws && client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify(data));
+        }
+      });
 
     } catch (error) {
       console.error('Error parsing JSON:', error);
@@ -43,7 +40,6 @@ wss.clients.forEach((client) => {
     console.log('A client disconnected.');
   });
 });
-
 
 wss.on('listening', () => {
   const { address, port } = wss.address();

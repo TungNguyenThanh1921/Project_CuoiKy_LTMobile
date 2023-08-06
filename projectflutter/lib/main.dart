@@ -176,24 +176,39 @@ class _ChatAppState extends State<ChatApp> {
           final jsonData = jsonDecode(data);
           final type = jsonData['type'];
           final content = jsonData['content'];
-          final roomId = jsonData['roomId'] ;
+          final roomId = jsonData['roomId'];
 
-          // Kiểm tra xem dữ liệu có đúng là tin nhắn trong phòng chat hiện tại không
+          // Check if the message is for the current room
           if (roomId == widget.id_room.toString()) {
-            // Xử lý tin nhắn ở đây, ví dụ:
             if (type == 'text') {
-              final message = Message(MessageType.text, content,null, senderName: 'Receiver', timestamp: DateTime.now(), avatar: ServerManager().getAvatarUser(ServerManager().user!.id));
+              final message = Message(
+                MessageType.text,
+                content as String,
+                null,
+                senderName: 'Receiver',
+                timestamp: DateTime.now(),
+                avatar: ServerManager().getAvatarUser(ServerManager().user!.id),
+              );
               setState(() {
                 messages.add(message);
               });
             } else if (type == 'image') {
-              final message = Message(MessageType.image, null,Uint8List.fromList(base64.decode(content)), senderName: 'Receiver', timestamp: DateTime.now(), avatar: ServerManager().getAvatarUser(ServerManager().user!.id));
+              final imageBytes = base64Decode(content as String);
+              final message = Message(
+                MessageType.image,
+                null,
+                imageBytes,
+                senderName: 'Receiver',
+                timestamp: DateTime.now(),
+                avatar: ServerManager().getAvatarUser(ServerManager().user!.id),
+              );
               setState(() {
                 messages.add(message);
               });
             } else {
               print('Received unexpected data format: $type');
             }
+
             _scrollController.animateTo(
               _scrollController.position.maxScrollExtent,
               duration: Duration(milliseconds: 300),
@@ -205,9 +220,8 @@ class _ChatAppState extends State<ChatApp> {
         } catch (e) {
           print('Error parsing JSON: $e');
         }
-      } else {
-        print('Received unexpected data type: ${data.runtimeType}');
       }
+
   }
   Future<void> sendMessage(String message, PickedFile? image) async {
     if (message.isEmpty && image == null) return;

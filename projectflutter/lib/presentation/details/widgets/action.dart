@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gap/gap.dart';
+import 'package:projectflutter/ServerManager.dart';
 import 'package:projectflutter/core/app_export.dart';
 
 class ActionList extends StatelessWidget {
@@ -11,7 +12,7 @@ class ActionList extends StatelessWidget {
     final List<Map<String, dynamic>> items = [
       {'icon': ImageConstant.imgIconeye,
         'text': 'Email',
-        'trailing': 'Trang123@email.com'},
+        'trailing': ServerManager().user!.email},
       {
         'icon': ImageConstant.imgIconheart,
         'text': 'Tin nhắn đã phản hồi',
