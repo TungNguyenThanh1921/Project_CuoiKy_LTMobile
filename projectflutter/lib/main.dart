@@ -148,32 +148,12 @@ class _ChatAppState extends State<ChatApp> {
   }
   void _onChatRoomReload(dynamic data) {
       if (data is List<int>) {
-        // final prefix = utf8.decode(data.sublist(0, 5));
-        // final content = data.sublist(5);
-        //
-        // if (prefix == 'text ') {
-        //   final textMessage = utf8.decode(content);
-        //   final message = Message(MessageType.text, textMessage, senderName: 'Receiver', timestamp: DateTime.now(), avatar: ServerManager().getAvatarUser(ServerManager().user!.id));
-        //   setState(() {
-        //     messages.add(message);
-        //   });
-        // } else if (prefix == 'image') {
-        //   final message = Message(MessageType.image, base64Encode(content), senderName: 'Receiver', timestamp: DateTime.now(), avatar: ServerManager().getAvatarUser(ServerManager().user!.id));
-        //   setState(() {
-        //     messages.add(message);
-        //   });
-        // } else {
-        //   print('Received unexpected data format: $prefix');
-        // }
-        // _scrollController.animateTo(
-        //   _scrollController.position.maxScrollExtent,
-        //   duration: Duration(milliseconds: 300),
-        //   curve: Curves.easeInOut,
-        // );
+
       }  else if (data is String) {
         // Xử lý dữ liệu nhận được từ server là JSON
         try {
           final jsonData = jsonDecode(data);
+          final avatar_sender = jsonData['userId'];
           final type = jsonData['type'];
           final content = jsonData['content'];
           final roomId = jsonData['roomId'];
@@ -187,7 +167,7 @@ class _ChatAppState extends State<ChatApp> {
                 null,
                 senderName: 'Receiver',
                 timestamp: DateTime.now(),
-                avatar: ServerManager().getAvatarUser(ServerManager().user!.id),
+                avatar: ServerManager().getAvatarUser(avatar_sender),
               );
               setState(() {
                 messages.add(message);
@@ -200,7 +180,7 @@ class _ChatAppState extends State<ChatApp> {
                 imageBytes,
                 senderName: 'Receiver',
                 timestamp: DateTime.now(),
-                avatar: ServerManager().getAvatarUser(ServerManager().user!.id),
+                avatar: ServerManager().getAvatarUser(avatar_sender),
               );
               setState(() {
                 messages.add(message);
